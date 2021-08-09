@@ -1,0 +1,11 @@
+{
+  "name": "WillBot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "minimist": "^1.2.5",
+    "oicq": "^1.18.3"
+  },
+  "author": "ForkKILLET"
+}
