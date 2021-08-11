@@ -1,9 +1,10 @@
 module.exports = {
 	env: {
 		node: true,
+		es2021: true
 	},
 	parserOptions: {
-		ecmaVersion: 12
+		ecmaVersion: 2021
 	},
 	rules: {
 		"indent": [ 0, "tab" ],

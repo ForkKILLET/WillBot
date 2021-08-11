@@ -13,7 +13,8 @@ const arg = minimist(process.argv.slice(2), {
 		config: "c",
 		uin: "u",
 		password: "p",
-		platform: "f"
+		platform: "f",
+		cli: "i"
 	}
 })
 
@@ -48,33 +49,6 @@ void async function init() {
 		bot.login(pw)
 	})
 
-	bot.on("message", msg => {
-		try {
-			if (sto.groups.includes(msg.group_id) || msg.message_type === "private") {
-				bot.logger.info(msg)
-				const raw = msg.raw_message.replace(/&#(\d+);/g, (_, c) => String.fromCharCode(c))
-
-				const pr = sto.prompt.find(s => raw.startsWith(s))
-				if (pr) {
-					const l = { msg }
-					if (! will.l) {
-						will.l = true
-						l.sto = sto
-						l.bot = bot
-						l.reload = () => {
-							delete require.cache[ Object.keys(require.cache).find(fp => fp.endsWith("will.js")) ]
-							will = require("./will")
-						}
-					}
-					will(raw.slice(pr.length).trim(), l)
-				}
-			}
-		}
-		catch (err) {
-			bot.logger.error(err)
-		}
-	})
-
 	bot.on("system.login.slider", () => {
 		bot.logger.mark("Willbot: Request ticket:")
 		process.stdin.once("data", input =>
@@ -98,4 +72,49 @@ void async function init() {
 	else process.stdin.once("data", input =>
 		bot.login(pw = input.toString().slice(0, -1))
 	)
+
+	// :::: Wake
+
+	const wake = (raw, L) => {
+		if (! will.l) {
+			will.l = true
+			L.sto = sto
+			L.bot = bot
+			L.reload = () => {
+				Object.keys(require.cache)
+					.filter(fp => fp.endsWith("will.js"))
+					.reverse()
+					.forEach(fp => delete require.cache[fp])
+				will = require("./will")
+			}
+		}
+		will(raw, L)
+	}
+
+	let cli_rl
+	if (arg.cli) bot.on("system.online", () => {
+		cli_rl = require("./cli")(wake, bot, sto)
+	})
+
+	bot.on("message", msg => {
+		try {
+			if (sto.groups.includes(msg.group_id) || msg.message_type === "private") {
+				bot.logger.info(msg)
+				const raw = msg.raw_message.replace(/&#(\d+);/g, (_, c) => String.fromCharCode(c))
+				const pr = sto.prompt.find(s => raw.startsWith(s))
+
+				if (pr) wake(raw.slice(pr.length).trim(), {
+					msg,
+					sleep: async () => {
+						await sto.write()
+						bot.logout()
+						cli_rl?.close()
+					}
+				})
+			}
+		}
+		catch (err) {
+			bot.logger.error(err)
+		}
+	})
 } ()
