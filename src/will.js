@@ -3,6 +3,7 @@
 const cp = require("child_process")
 const os = require("os")
 const mm = require("minimist")
+const { format } = require("pretty-format")
 
 // :: Util
 
@@ -182,7 +183,7 @@ const fun = {
 		switch: () => {3, "s" // Toggle whether to record history commands.
 			return ">: " + ((L.sto.log.on = ! L.sto.log.on) ? "on" : "off")
 		},
-		list: _ => {2, "l" // List history command from [i] to [j].
+		list: _ => {2, "l", "*" // List history command from [i] to [j].
 			let [ i, j ] = _.split("..")
 			i ||= 0
 			j ||= + i
@@ -231,26 +232,38 @@ const fun = {
 			return "With: " + (withs ? `[ ${ withs.join(", ") } ]` : "null")
 		}
 	},
+	where: cmd => {1
+		const find_fun = (f, cmd) => {
+			if (typeof f !== "object") return
+			if (cmd in f) return "." + cmd
+			for (const [ n, g ] of Object.entries(f)) {
+				const r = find_fun(g, cmd)
+				if (r) return "." + n + r
+			}
+		}
+		return `Where: "${cmd}" is "${ find_fun(fun, cmd) ?? "nope" }"`
+	},
 	test: {
 		info: () => {0, "i" // Show bot information.
 			return `
-				WillBot v1.1.0 {
+				WillBot v1.2.0 {
 					author: "ForkKILLET",
 					madeBy: "OICQ",
 					runOn: "${os.type}",
-					uin: ${L.bot.uin}
+					uin: ${L.bot.uin},
+					githubRepo: "ForkKILLET/WillBot"
 				}
 			`.replace(/^\t{4}/gm, "")
 		},
 		msg: () => {1, "m" // Show message object.
-			return JSON.stringify(L.msg)
+			return format(L.msg)
 		},
 		eval: code => {4, "e", "~" // Evaluate javascript [code].
 			try {
 				const res = eval(code)
 				return L.msg.sender.nickname === "WillBot::CLI"
 					? res
-					: JSON.stringify(res)
+					: format(res)
 			}
 			catch (err) {
 				return err.toString()
@@ -258,8 +271,8 @@ const fun = {
 		},
 		sh: async code => {4, "$" // Execute sh [code].
 			return new Promise(res =>
-				cp.exec(code, { timeout: 60 * 1000 }, (err, stdout, stderr) =>
-					res((err ? stderr : stdout).replace(/\x1B\[\d{1,2}[a-z]/g, ""))
+				cp.exec(code, { timeout: 30 * 1000 }, (err, stdout, stderr) =>
+					console.log(JSON.stringify(stdout)) + res((err ? stderr || (err?.signal ?? err) : stdout).replace(/\x1B\[\d?;?\d{0,2}[a-z]/g, ""))
 				)
 			)
 		},
@@ -277,9 +290,11 @@ const fun = {
 			},
 			r: () => {3 // Read storage from config file.
 				L.sto.read()
+				L.bot.logger.mark("WillBot: Read config.")
 			},
 			w: () => {3 // Write storage to config file.
 				L.sto.write()
+				L.bot.logger.mark("WillBot: Write config.")
 			}
 		},
 		brainfuck: code => {2, "bf" // Run brainfuck [code].
@@ -320,7 +335,7 @@ const fun = {
 		set: (_, man) => {3, "%" // Set [id]'s lv to [lv]
 			const [ id, lv ] = _.split("=")
 			if (! lv)
-				return "Access: Needed target lv." + (man ? "Expected [id]=[lv]" : "")
+				return "Access: Needed target lv." + (man ? " Expected [id]=[lv]" : "")
 			fun.access.req(
 				Math.max(+ lv, (+ id === L.msg.user_id
 					? - Infinity
@@ -335,8 +350,10 @@ const fun = {
 				: undefined
 		},
 
-		list: () => {3, "l", "*" // List lvs of all users.
+		list: lv => {3, "l", "*" // List lvs of all users.
 			return Object.entries(L.sto.access)
+				.filter(a => ! lv || a[1] === + lv)
+				.sort((a1, a2) => a2[1] - a1[1])
 				.map(([ id, lv ]) => id + ".".repeat(15 - id.length) + lv)
 				.join("\n")
 		},
@@ -372,6 +389,7 @@ const fun = {
 	op: "*",
 	saying: "*",
 	dice: "*",
+	sifou: "*",
 }
 
 init_fun({ fun })

@@ -1,11 +1,16 @@
 const fs = require("fs").promises
 
+Date.isSameDay = (d1, d2) => {
+	return + d1 - d2 <= 24 * 60 * 60 * 1000 && d1.getDate() === d2.getDate()
+}
+String.padDiff = (i1, i2) => " ".repeat(i1.toString().length - i2.toString().length)
+
 module.exports = (L, fun) => ({
 	jrrp: {
 		_: (f, man) => {0 // JinRi RenPin.
 			const rp = ((L.sto.dice ??= {})[ L.msg.user_id ] ??= {}).jrrp ??= {}
-			const jr = new Date(), tr = new Date(rp.t)
-			if (! rp.t || jr - tr > 24 * 60 * 60 * 1000 || jr.getDate() !== tr.getDate()) {
+			const jr = new Date
+			if (! rp.t || ! Date.isSameDay(jr, new Date(rp.t))) {
 				rp.t = jr
 				rp.p = typeof f === "function" ? f() : Math.randto(100)
 			}
@@ -16,10 +21,10 @@ module.exports = (L, fun) => ({
 				: [ reply, rp.p ]
 		},
 		nd: () => {0 // JinRi RenPin. (Normal Distribution)
-			return fun.dice.jrrp._(() => fun.dice.r("2d50"))[0] + `（正态分布）`
+			return fun.dice.jrrp._(() => fun.dice.r("5d20"))[0] + `（正态分布 5d20）`
 		},
 		sd: async () => {0 // JinRi RenPin. (Senior Distribution)
-			const fp = L.sto.dice.sd_path
+			const fp = L.sto.dice_cfg?.sd_path
 			if (! fp) return `Dice: Senior distribution table not found.`
 			let table = fun.dice.jrrp.sd.table ??= (await fs.readFile(fp)).toString().split("\n")
 
@@ -29,6 +34,15 @@ module.exports = (L, fun) => ({
 		clear: () => {2, "c" // Clear JinRi RenPin.
 			; (L.sto.dice ??= {})[L.msg.user_id] = {}
 			return `人品已重置，相信你不会刷人品的～`
+		},
+		top: () => {0, "*" // See JinRi RenPin Top list.
+			const jr = new Date
+			return Object.entries(L.sto.dice ?? {})
+				.map(([ id, { jrrp: { t, p } } ]) => ({ id, t, p }))
+				.filter(({ t }) => Date.isSameDay(jr, new Date(t)))
+				.sort(({ p1 }, { p2 }) => p1 - p2)
+				.map(({ id, p }, k, { length: l }) => String.padDiff(l, k) + `${k}. ${id}: ${p}`)
+				.join("\n")
 		},
 	},
 	r: (fmt, man) => {0 // Roll.

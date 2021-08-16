@@ -4,8 +4,11 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "html-entities": "^2.3.2",
     "minimist": "^1.2.5",
-    "oicq": "^1.18.3"
+    "node-fetch": "^2.6.1",
+    "oicq": "^1.18.3",
+    "pretty-format": "^27.0.6"
   },
   "author": "ForkKILLET"
 }

@@ -7,6 +7,8 @@ let will				= require("./will")
 
 // :: Util
 
+Date.sleep = t => new Promise(res => setTimeout(res, t))
+
 const arg = minimist(process.argv.slice(2), {
 	"--": true,
 	alias: {
@@ -44,8 +46,9 @@ void async function init() {
 		bot.logger.mark("WillBot: A new will is awakening.")
 	})
 
-	bot.on("system.offline", () => {
+	bot.on("system.offline", async () => {
 		bot.logger.mark("WillBot: The new will is sleeping.")
+		await Date.sleep(5000)
 		bot.login(pw)
 	})
 
@@ -75,7 +78,7 @@ void async function init() {
 
 	// :::: Wake
 
-	const wake = (raw, L) => {
+	const wake = async (raw, L) => {
 		if (! will.l) {
 			will.l = true
 			L.sto = sto
@@ -88,7 +91,7 @@ void async function init() {
 				will = require("./will")
 			}
 		}
-		will(raw, L)
+		await will(raw, L)
 	}
 
 	let cli_rl
@@ -108,7 +111,7 @@ void async function init() {
 					sleep: async () => {
 						await sto.write()
 						bot.logout()
-						cli_rl?.close()
+						cli_rl?.close?.()
 					}
 				})
 			}

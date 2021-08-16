@@ -22,5 +22,8 @@ module.exports = L => ({
 			"适合初学者（大雾）的编程语言👉 https://piplus.plus",
 		]
 		return words[ Math.randt0(words.length) ]
+	},
+	o2: () => {0 // optimize_2
+
 	}
 })
