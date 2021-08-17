@@ -40,7 +40,7 @@ module.exports = (L, fun) => ({
 			return Object.entries(L.sto.dice ?? {})
 				.map(([ id, { jrrp: { t, p } } ]) => ({ id, t, p }))
 				.filter(({ t }) => Date.isSameDay(jr, new Date(t)))
-				.sort(({ p1 }, { p2 }) => p1 - p2)
+				.sort(({ p: p1 }, { p: p2 }) => p2 - p1)
 				.map(({ id, p }, k, { length: l }) => String.padDiff(l, k) + `${k}. ${id}: ${p}`)
 				.join("\n")
 		},

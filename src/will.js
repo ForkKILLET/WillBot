@@ -27,6 +27,10 @@ const type = {
 		if (isNaN(v)) throw new type.Error(`${s} is not a number.`)
 		if (v < 0) throw new type.Error(`${s} is not unsigned.`)
 		return v
+	},
+	b: s => {
+		if (typeof s !== "boolean") throw new type.Error(`${s} is not a boolean`)
+		return s
 	}
 }
 
@@ -76,10 +80,20 @@ const init_fun = f => {
 			desc += "\n\nUsage: "
 			f[i].param = param.name.split(", ").map((v, k) => {
 				let s = req[k].slice(1, -1)
-				const f = s[0] === "="
-				if (f) s = s.slice(1)
-				desc += `[${ f ? "[" : "" }--${v} | -${v[0]}${ f ? "]": "" } <${s}>] `
-				return [ v, s, f ]
+
+				const f_e = s[0] === "!"
+				if (f_e) s = s.slice(1)
+				const f_d = s[0] === "="
+				if (f_d) s = s.slice(1)
+
+				desc += (f_e ? "< " : "[ ")
+					+ (f_d ? "[" : "")
+					+ `--${v}|-${v[0]}`
+					+ (f_d ? "]": "")
+					+ ` <${s}>`
+					+ (f_e ? " >" : " ]")
+					+ " "
+				return [ v, s, f_d, f_e ]
 			})
 		}
 
@@ -102,6 +116,7 @@ const init_fun = f => {
 					return `Ψ: ${n}(${lv}) <- ${i}: ${desc}`
 				}
 				f[n].lv = + lv
+				f[n].param = f[i].param
 				f[n].alias = true
 			})
 		break
@@ -127,21 +142,21 @@ const will = async (raw, L_) => {
 		if (f.param) {
 			const ps = mm(arg.split(/\s+/))
 			arg = []
-			for (const [ name, req, _1 ] of f.param) {
+			for (const [ name, req, f_d, f_e ] of f.param) {
 				let a = undefined
 				a = ps[name] ?? ps[name[0]]
-				if (_1) a ??= ps._.join(" ")
+				if (f_d) a ??= ps._.join(" ")
 
 				try {
 					arg.push(type[req](a))
 				}
 				catch (err) {
-					if (_1) throw err.when(real_cmd, name)
+					if (f_e) throw err.when(real_cmd, name)
 					else arg.push(undefined)
 				}
 			}
 		}
-		const reply = await f(arg ?? "", true)
+		const reply = await f(arg ?? "", true, arg)
 		if (reply) L.msg.reply(reply)
 	}
 	catch (err) {
@@ -246,7 +261,7 @@ const fun = {
 	test: {
 		info: () => {0, "i" // Show bot information.
 			return `
-				WillBot v1.2.0 {
+				WillBot v1.3.0 {
 					author: "ForkKILLET",
 					madeBy: "OICQ",
 					runOn: "${os.type}",
@@ -272,7 +287,7 @@ const fun = {
 		sh: async code => {4, "$" // Execute sh [code].
 			return new Promise(res =>
 				cp.exec(code, { timeout: 30 * 1000 }, (err, stdout, stderr) =>
-					console.log(JSON.stringify(stdout)) + res((err ? stderr || (err?.signal ?? err) : stdout).replace(/\x1B\[\d?;?\d{0,2}[a-z]/g, ""))
+					res((err ? stderr || (err?.signal ?? err) : stdout).replace(/\x1B\[\d?;?\d{0,2}[a-z]/g, ""))
 				)
 			)
 		},
@@ -390,6 +405,7 @@ const fun = {
 	saying: "*",
 	dice: "*",
 	sifou: "*",
+	minec: "*"
 }
 
 init_fun({ fun })

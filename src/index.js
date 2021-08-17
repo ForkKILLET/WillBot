@@ -107,7 +107,7 @@ void async function init() {
 				const pr = sto.prompt.find(s => raw.startsWith(s))
 
 				if (pr) wake(raw.slice(pr.length).trim(), {
-					msg,
+					wake, msg,
 					sleep: async () => {
 						await sto.write()
 						bot.logout()
