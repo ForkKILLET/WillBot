@@ -1,4 +1,21 @@
 module.exports = (L, fun) => ({
+	info: () => {0
+		return `
+			WillBot::Minec v1.0.0 {
+				MineCraftPlugin: {
+					author: "optimize_2",
+					madeBy: "Java",
+					connect: "java.net.ServerSocket"
+				},
+				will: {
+					author: "ForkKILLET",
+					madeBy: "OICQ",
+					connect: "net.Socket"
+				},
+				stable: false
+			}
+		`.padIndent(3)
+	},
 	forward: ([ host, port, group ] = [ "!=s", "!u", "!u" ]) => {4, "fw" // Two-way forward messages between MineCraft Server and QQ group.
 		const net = require("net")
 		const cfg = L.sto.minec?.forward ?? {}

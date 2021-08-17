@@ -1,10 +1,5 @@
 const fs = require("fs").promises
 
-Date.isSameDay = (d1, d2) => {
-	return + d1 - d2 <= 24 * 60 * 60 * 1000 && d1.getDate() === d2.getDate()
-}
-String.padDiff = (i1, i2) => " ".repeat(i1.toString().length - i2.toString().length)
-
 module.exports = (L, fun) => ({
 	jrrp: {
 		_: (f, man) => {0 // JinRi RenPin.

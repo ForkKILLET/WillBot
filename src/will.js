@@ -10,6 +10,15 @@ const { format } = require("pretty-format")
 Math.randto = max => ~~ (Math.random() * 1.e6) % max + 1
 Math.randt0 = max => ~~ (Math.random() * 1.e6) % (max + 1)
 
+String.prototype.padIndent = function (n) {
+	return this.replace(RegExp(String.raw`^\t{${n}}`, "gm"), "")
+}
+String.padDiff = (i1, i2) => " ".repeat(i1.toString().length - i2.toString().length)
+
+Date.isSameDay = (d1, d2) => {
+	return + d1 - d2 <= 24 * 60 * 60 * 1000 && d1.getDate() === d2.getDate()
+}
+
 const type = {
 	Error: class extends TypeError {
 		constructor(msg) {
@@ -268,7 +277,7 @@ const fun = {
 					uin: ${L.bot.uin},
 					githubRepo: "ForkKILLET/WillBot"
 				}
-			`.replace(/^\t{4}/gm, "")
+			`.padIndent(4)
 		},
 		msg: () => {1, "m" // Show message object.
 			return format(L.msg)

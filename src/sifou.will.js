@@ -1,10 +1,6 @@
 const fetch = require("node-fetch")
 const htmlEntities = require("html-entities")
 
-String.prototype.padIndent ??= function (n) {
-	return this.replace(RegExp(String.raw`^\t{${n}}`, "gm"), "")
-}
-
 module.exports = (L, fun) => ({
 	get: () => {0, "/" // Get your SegmentFault username.
 		return `SiFou: You are ${ L.sto.sifou?.[L.msg.user_id]?.user ?? "not recorded" }.`
