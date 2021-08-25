@@ -1,8 +1,8 @@
-module.exports = async (wake, bot, sto) => {
+module.exports = async (wake, bot, sto, jobs) => {
 	const rl = require("readline").createInterface({
 		input: process.stdin,
 		output: process.stdout,
-		prompt: sto.prompt[0] + " "
+		prompt: sto.prompts[0] + " "
 	})
 
 	const L = {
@@ -14,16 +14,18 @@ module.exports = async (wake, bot, sto) => {
 				user_id: bot.uin,
 				nickname: "WillBot::CLI"
 			}
-		},
-		sleep: async () => {
-			await sto.write()
-			bot.logout()
-			rl.close()
 		}
 	}
 
+	jobs.reg({
+		desc: "WillBot::CLI",
+		sig: {
+			kill: () => rl.close()
+		}
+	})
+
 	rl.prompt()
-	read: for await (const l of rl) {
+	for await (const l of rl) {
 		await wake(l, L)
 		rl.prompt()
 	}

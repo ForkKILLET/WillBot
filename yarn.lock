@@ -33,9 +33,9 @@
     "@types/istanbul-lib-report" "*"
 
 "@types/node@*":
-  version "16.6.1"
-  resolved "https://registry.nlark.com/@types/node/download/@types/node-16.6.1.tgz#aee62c7b966f55fc66c7b6dfa1d58db2a616da61"
-  integrity sha1-ruYse5ZvVfxmx7bfodWNsqYW2mE=
+  version "16.6.2"
+  resolved "https://registry.nlark.com/@types/node/download/@types/node-16.6.2.tgz#331b7b9f8621c638284787c5559423822fdffc50"
+  integrity sha1-Mxt7n4YhxjgoR4fFVZQjgi/f/FA=
 
 "@types/yargs-parser@*":
   version "20.2.1"
@@ -132,9 +132,9 @@ fs-extra@^8.1.0:
     universalify "^0.1.0"
 
 graceful-fs@^4.1.6, graceful-fs@^4.2.0:
-  version "4.2.6"
-  resolved "https://registry.npm.taobao.org/graceful-fs/download/graceful-fs-4.2.6.tgz#ff040b2b0853b23c3d31027523706f1885d76bee"
-  integrity sha1-/wQLKwhTsjw9MQJ1I3BvGIXXa+4=
+  version "4.2.8"
+  resolved "https://registry.nlark.com/graceful-fs/download/graceful-fs-4.2.8.tgz?cache=0&sync_timestamp=1628194078324&other_urls=https%3A%2F%2Fregistry.nlark.com%2Fgraceful-fs%2Fdownload%2Fgraceful-fs-4.2.8.tgz#e412b8d33f5e006593cbd3cee6df9f2cebbe802a"
+  integrity sha1-5BK40z9eAGWTy9PO5t+fLOu+gCo=
 
 has-flag@^4.0.0:
   version "4.0.0"
@@ -143,7 +143,7 @@ has-flag@^4.0.0:
 
 html-entities@^2.3.2:
   version "2.3.2"
-  resolved "https://registry.nlark.com/html-entities/download/html-entities-2.3.2.tgz#760b404685cb1d794e4f4b744332e3b00dcfe488"
+  resolved "https://registry.npm.taobao.org/html-entities/download/html-entities-2.3.2.tgz#760b404685cb1d794e4f4b744332e3b00dcfe488"
   integrity sha1-dgtARoXLHXlOT0t0QzLjsA3P5Ig=
 
 iconv-lite@^0.4.4:
@@ -159,6 +159,11 @@ jsonfile@^4.0.0:
   integrity sha1-h3Gq4HmbZAdrdmQPygWPnBDjPss=
   optionalDependencies:
     graceful-fs "^4.1.6"
+
+jsqr@^1.4.0:
+  version "1.4.0"
+  resolved "https://registry.nlark.com/jsqr/download/jsqr-1.4.0.tgz#8efb8d0a7cc6863cb6d95116b9069123ce9eb2d1"
+  integrity sha1-jvuNCnzGhjy22VEWuQaRI86estE=
 
 lodash.merge@^4.6.2:
   version "4.6.2"
@@ -183,8 +188,8 @@ long@^4.0.0:
 
 minimist@^1.2.5:
   version "1.2.5"
-  resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.5.tgz#67d66014b66a6a8aaa0c083c5fd58df4e4e97602"
-  integrity sha512-FM9nNUYrRBAELZQT3xeZQ7fmMOBg6nWNmJKTcgsJeaLstP/UODVpGsr5OhXhhXg6f+qtJ8uiZ+PUxkDWcgIXLw==
+  resolved "https://registry.npm.taobao.org/minimist/download/minimist-1.2.5.tgz#67d66014b66a6a8aaa0c083c5fd58df4e4e97602"
+  integrity sha1-Z9ZgFLZqaoqqDAg8X9WN9OTpdgI=
 
 ms@2.0.0:
   version "2.0.0"
@@ -212,17 +217,25 @@ needle@^2.5.2:
 
 node-fetch@^2.6.1:
   version "2.6.1"
-  resolved "https://registry.nlark.com/node-fetch/download/node-fetch-2.6.1.tgz?cache=0&sync_timestamp=1626684812087&other_urls=https%3A%2F%2Fregistry.nlark.com%2Fnode-fetch%2Fdownload%2Fnode-fetch-2.6.1.tgz#045bd323631f76ed2e2b55573394416b639a0052"
+  resolved "https://registry.nlark.com/node-fetch/download/node-fetch-2.6.1.tgz#045bd323631f76ed2e2b55573394416b639a0052"
   integrity sha1-BFvTI2Mfdu0uK1VXM5RBa2OaAFI=
 
 oicq@^1.18.3:
-  version "1.18.3"
-  resolved "https://registry.nlark.com/oicq/download/oicq-1.18.3.tgz#7797a8d9972015d384bc76b43d7d5e9ca1e1c997"
-  integrity sha1-d5eo2ZcgFdOEvHa0PX1enKHhyZc=
+  version "1.19.3"
+  resolved "https://registry.nlark.com/oicq/download/oicq-1.19.3.tgz#59e98ba3e1870db610a7a409ca23f5986119506a"
+  integrity sha1-WemLo+GHDbYQp6QJyiP1mGEZUGo=
   dependencies:
+    jsqr "^1.4.0"
     log4js "^6.3.0"
     long "^4.0.0"
-    probe-image-size "^7.2.0"
+    pngjs "^6.0.0"
+    probe-image-size "^7.2.1"
+    qrcode-terminal "^0.12.0"
+
+pngjs@^6.0.0:
+  version "6.0.0"
+  resolved "https://registry.npm.taobao.org/pngjs/download/pngjs-6.0.0.tgz?cache=0&sync_timestamp=1603548566507&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fpngjs%2Fdownload%2Fpngjs-6.0.0.tgz#ca9e5d2aa48db0228a52c419c3308e87720da821"
+  integrity sha1-yp5dKqSNsCKKUsQZwzCOh3INqCE=
 
 pretty-format@^27.0.6:
   version "27.0.6"
@@ -234,7 +247,7 @@ pretty-format@^27.0.6:
     ansi-styles "^5.0.0"
     react-is "^17.0.1"
 
-probe-image-size@^7.2.0:
+probe-image-size@^7.2.1:
   version "7.2.1"
   resolved "https://registry.nlark.com/probe-image-size/download/probe-image-size-7.2.1.tgz#df0c924e67e247bc94f8fcb0fad7f0081061fc44"
   integrity sha1-3wySTmfiR7yU+Pyw+tfwCBBh/EQ=
@@ -243,9 +256,14 @@ probe-image-size@^7.2.0:
     needle "^2.5.2"
     stream-parser "~0.3.1"
 
+qrcode-terminal@^0.12.0:
+  version "0.12.0"
+  resolved "https://registry.npm.taobao.org/qrcode-terminal/download/qrcode-terminal-0.12.0.tgz#bb5b699ef7f9f0505092a3748be4464fe71b5819"
+  integrity sha1-u1tpnvf58FBQkqN0i+RGT+cbWBk=
+
 react-is@^17.0.1:
   version "17.0.2"
-  resolved "https://registry.nlark.com/react-is/download/react-is-17.0.2.tgz?cache=0&sync_timestamp=1628889136100&other_urls=https%3A%2F%2Fregistry.nlark.com%2Freact-is%2Fdownload%2Freact-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"
+  resolved "https://registry.nlark.com/react-is/download/react-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"
   integrity sha1-5pHUqOnHiTZWVVOas3J2Kw77VPA=
 
 rfdc@^1.1.4:

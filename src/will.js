@@ -1,23 +1,8 @@
 // :: Import
 
-const cp = require("child_process")
-const os = require("os")
 const mm = require("minimist")
-const { format } = require("pretty-format")
 
 // :: Util
-
-Math.randto = max => ~~ (Math.random() * 1.e6) % max + 1
-Math.randt0 = max => ~~ (Math.random() * 1.e6) % (max + 1)
-
-String.prototype.padIndent = function (n) {
-	return this.replace(RegExp(String.raw`^\t{${n}}`, "gm"), "")
-}
-String.padDiff = (i1, i2) => " ".repeat(i1.toString().length - i2.toString().length)
-
-Date.isSameDay = (d1, d2) => {
-	return + d1 - d2 <= 24 * 60 * 60 * 1000 && d1.getDate() === d2.getDate()
-}
 
 const type = {
 	Error: class extends TypeError {
@@ -67,7 +52,7 @@ const init_fun = f => {
 				.map(j => `${j}(${ f[i][j].alias ? "^": "" }${ f[i][j].lv ?? "*" })`)
 				.join(", ")
 			if (f[i] === fun)
-				h += "\n\nname(access), (*) has more subcommands, (^) is an alias"
+				h += `\n\nname(access), (*) has more subcommands, (^) is an alias, "_" is self, "?" is help`
 			return h
 		}
 		init_fun(f[i])
@@ -107,33 +92,27 @@ const init_fun = f => {
 		}
 
 		f[i].lv = + lv
-		f[i]["?"] = () => {0
-			return `Ψ: ${i}(${lv})`
-				+ (alias
-					? ` -> [ ${ alias.join(", ") } ]`
-					: ""
-				)
-				+ `: ${desc}`
-		}
+		f[i]["?"] = () => `Ψ: ${i}(${lv})`
+			+ (alias ? ` -> [ ${ alias.join(", ") } ]` : "")
+			+ `: ${desc}`
+		f[i]["?"].lv = 0
+
 		; (alias = alias
 			?.split(", ")
 			?.filter(n => n)
 			?.map(n => n.slice(1, -1)))
 			?.forEach?.(n => {
-				f[n] = eval(f[i].toString())
-				f[n]["?"] = () => {0
-					return `Ψ: ${n}(${lv}) <- ${i}: ${desc}`
-				}
-				f[n].lv = + lv
-				f[n].param = f[i].param
+				f[n] = f[i].clone()
+				f[n]["?"] = () => `Ψ: ${n}(${lv}) <- ${i}: ${desc}`
+				f[n]["?"].lv = 0
 				f[n].alias = true
 			})
 		break
 	}
 }
 
-const will = async (raw, L_) => {
-	Object.assign(L, L_)
+const will = async (raw, new_L) => {
+	Object.assign(L, new_L, { raw })
 
 	let [ cmd, arg ] = raw.split(/(?<! .*) +/), real_cmd
 
@@ -149,7 +128,7 @@ const will = async (raw, L_) => {
 	try {
 		fun.access.req(f.lv)
 		if (f.param) {
-			const ps = mm(arg.split(/\s+/))
+			const ps = mm((arg ?? []).split(/\s+/))
 			arg = []
 			for (const [ name, req, f_d, f_e ] of f.param) {
 				let a = undefined
@@ -166,13 +145,13 @@ const will = async (raw, L_) => {
 			}
 		}
 		const reply = await f(arg ?? "", true, arg)
-		if (reply) L.msg.reply(reply)
+		if (reply !== undefined) await L.msg.reply(reply)
 	}
 	catch (err) {
 		switch (err?.code) {
 		case "WillBot::AccessErr":
 		case "WillBot::ArgTypeErr":
-			L.msg.reply(err.message)
+			await L.msg.reply(err.message)
 			break
 		default:
 			L.bot.logger.error(err)
@@ -226,10 +205,13 @@ const fun = {
 		L.reload()
 		L.bot.logger.mark("WillBot: Reload the will.")
 	},
+	whoami: () => {0 // Who are you?
+		return `${ L.msg.sender.nickname }(${ L.msg.user_id })`
+	},
 	with: {
 		_: cmds => {0, "set", "%" // Set current withs.
 			; (L.sto.with ??= {})[ L.msg.user_id ] = []
-			fun.with.add(cmds)
+			return fun.with.add(cmds)
 		},
 
 		add: cmds => {0, "+" // Add command(s)(*) to withs.
@@ -256,85 +238,51 @@ const fun = {
 			return "With: " + (withs ? `[ ${ withs.join(", ") } ]` : "null")
 		}
 	},
+	prompt: {
+		get: () => {0, "/" // Get current prompts
+			return `Prompt: [${ L.sto.prompts.map(p => `"${p}"`).join(", ") }]`
+		},
+
+		add: prompt => {4, "+" // Add a prompt.
+			if (! prompt) return "Prompt: Prompt is empty"
+			if (L.sto.prompts.includes(prompt)) return "Prompt: Prompt already exists"
+			L.sto.prompts.push(prompt)
+		},
+
+		rmv: prompt => {4, "-" // Remove a prompt.
+			const i = L.sto.prompts.indexOf(prompt)
+			if (i < 0) return "Prompt: Prompt doesn't exist"
+			L.sto.prompts.splice(i, 1)
+		}
+	},
 	where: cmd => {1
 		const find_fun = (f, cmd) => {
 			if (typeof f !== "object") return
 			if (cmd in f) return "." + cmd
 			for (const [ n, g ] of Object.entries(f)) {
+				if (f === g) continue
 				const r = find_fun(g, cmd)
 				if (r) return "." + n + r
 			}
 		}
-		return `Where: "${cmd}" is "${ find_fun(fun, cmd) ?? "nope" }"`
+		const r = find_fun(fun, cmd)
+		return `Where: "${cmd}" is ` + (r ? `"${r}"` : "nope")
 	},
-	test: {
-		info: () => {0, "i" // Show bot information.
-			return `
-				WillBot v1.3.0 {
-					author: "ForkKILLET",
-					madeBy: "OICQ",
-					runOn: "${os.type}",
-					uin: ${L.bot.uin},
-					githubRepo: "ForkKILLET/WillBot"
-				}
-			`.padIndent(4)
-		},
-		msg: () => {1, "m" // Show message object.
-			return format(L.msg)
-		},
-		eval: code => {4, "e", "~" // Evaluate javascript [code].
-			try {
-				const res = eval(code)
-				return L.msg.sender.nickname === "WillBot::CLI"
-					? res
-					: format(res)
-			}
-			catch (err) {
-				return err.toString()
-			}
-		},
-		sh: async code => {4, "$" // Execute sh [code].
-			return new Promise(res =>
-				cp.exec(code, { timeout: 30 * 1000 }, (err, stdout, stderr) =>
-					res((err ? stderr || (err?.signal ?? err) : stdout).replace(/\x1B\[\d?;?\d{0,2}[a-z]/g, ""))
+	jobs: {
+		_: () => {3 // Display status of jobs. id# [available signals] @ time: description
+			return L.jobs
+				.map(({ desc, time, sig }, id) =>
+					`${id}# [${ Object.keys(sig).join(", ") }] @ ${ new Date(time).toLocaleString() }: ${desc}`
 				)
-			)
+				.join("\n")
 		},
-		zsh: async code => {4, "$z" // Execute zsh [code], sourcing ".zshrc".
-			return await fun.test.sh(`
-				zsh << WillBot::ZSH
-				source ~/.zshrc > /dev/null
-				${code}
-				WillBot::ZSH
-			`.replace(/^\t{4}/gm, ""))
-		},
-		s: {
-			_: () => {3 // Get storage.
-				L.msg.reply(JSON.stringify(L.sto))
-			},
-			r: () => {3 // Read storage from config file.
-				L.sto.read()
-				L.bot.logger.mark("WillBot: Read config.")
-			},
-			w: () => {3 // Write storage to config file.
-				L.sto.write()
-				L.bot.logger.mark("WillBot: Write config.")
-			}
-		},
-		brainfuck: code => {2, "bf" // Run brainfuck [code].
-			const bf= "][+-><.".split("")
-			if (! code.match(`^[${ bf.map(c => "\\" + c).join("") }]+$`)) return `Brainfuck: Illegal char`
-			const js = "},while(a[p]){,a[p]++,a[p]--,p++,p--,o+=String.fromCharCode(a[p])".split(",")
-			const a = Array.from({ length: 1e6 }, () => 0)
-			let p = 0, o = ""
-			bf.map((c, k) => code = code.replaceAll(c, js[k] + ";"))
-			try {
-				eval(code)
-			}
-			catch (err) {
-				return err
-			}
-			return `Brainfuck: Mem sized ${a.length}, ptr at ${p}, output "${o}"`
+		kill: _ => {4
+			let [ id, sig ] = _.trim().split(/\s+/)
+			sig ||= "kill"
+			if (! L.jobs[id]) return "Kill: Job doesn't exist."
+			if (! L.jobs[id].sig?.[sig]) return `Kill: Signal "${sig}" isn't supported.`
+			L.jobs[id].sig[sig]()
+			return `Kill: Signal was sent.`
 		}
 	},
 	access: {
@@ -348,8 +296,8 @@ const fun = {
 
 		get: (id, man) => {0, "/" // Get your or [id]'s lv.
 			id ||= L.msg.user_id
-			if (L.sto.access[id] === undefined)
-				L.sto.access[id] = 0
+			if (L.sto.access?.[id] === undefined)
+				(L.sto.access ??= {})[id] = 0
 			const lv = + L.sto.access[id]
 			return man
 				? `Access: ${id}'s lv === ${lv}: ${ access.explain[lv] }`
@@ -357,25 +305,25 @@ const fun = {
 		},
 
 		set: (_, man) => {3, "%" // Set [id]'s lv to [lv]
-			const [ id, lv ] = _.split("=")
+			const [ id, lv ] = _ instanceof Array ? _ : _.split(/ +/).map(i => + i)
 			if (! lv)
 				return "Access: Needed target lv." + (man ? " Expected [id]=[lv]" : "")
 			fun.access.req(
-				Math.max(+ lv, (+ id === L.msg.user_id
+				Math.max(lv, (id === L.msg.user_id
 					? - Infinity
-					: (L.sto?.access?.[id] ?? null) + 1
+					: (L.sto.access?.[id] ?? 0) + 1
 				)),
 				"Needed lv > the settee"
 			)
 
-			L.sto.access[id] = + lv
+			L.sto.access[id] = lv
 			return man
 				? `Access: ${id}'s lv = ${lv}: ${ access.explain[lv] }`
 				: undefined
 		},
 
 		list: lv => {3, "l", "*" // List lvs of all users.
-			return Object.entries(L.sto.access)
+			return Object.entries(L.sto.access ?? {})
 				.filter(a => ! lv || a[1] === + lv)
 				.sort((a1, a2) => a2[1] - a1[1])
 				.map(([ id, lv ]) => id + ".".repeat(15 - id.length) + lv)
@@ -383,16 +331,16 @@ const fun = {
 		},
 
 		req: (lv, why) => {-1 // Require [lv] for [why].
-			if (fun.access.get(L.msg.user_id) < + lv)
+			if (! (fun.access.get(L.msg.user_id) >= + lv))
 				throw new access.Error(lv, typeof why === "string" ? why : undefined)
 		},
 
-		sado: _ => {0, "@" // Switch Access DO.
+		sado: _ => {0, "^" // Switch Access DO.
 			const [ tlv, raw ] = _.split(/(?<! .*) +/)
 			const id = L.msg.user_id
 			const olv = fun.access.get()
 
-			fun.access.set(id + "=" + tlv)
+			fun.access.set([ id, + tlv ])
 			try {
 				will(raw ?? "")
 			}
@@ -400,21 +348,36 @@ const fun = {
 			finally {
 				L.sto.access[id] = olv
 			}
+		},
+
+		sudo: _ => {4, "@" // Switch User DO.
+			let [ uid, raw ] = _.split(/(?<! .*) +/)
+			uid = + uid
+			const old_uid = L.msg.user_id
+
+			const sudoee = L.bot.gml.get(L.msg.group_id)?.get(uid)
+			if (! sudoee) return "Access: Sudoee isn't in current group."
+			L.msg.sender = sudoee
+
+			fun.access.req((L.sto.access[uid] ?? 0) + 1, "Needed lv >= the sudoee")
+			try {
+				L.msg.user_id = uid
+				will(raw ?? "")
+			}
+			catch (err) { throw err }
+			finally {
+				L.msg.user_id = old_uid
+			}
 		}
 	},
-	say: t => {1 // Say some[t]hing.
-		if (L.sto.prompt.some(s => t.startsWith(s))) fun.access.req(
-			L.sto.access?.[ L.bot.uin ] ?? 0,
-			"Needed lv >= the bot when the words to say starts with a prompt"
-		)
-		return t
-	},
-	project: "*",
+	test: "*",
 	op: "*",
-	saying: "*",
 	dice: "*",
+	saying: "*",
+	project: "*",
 	sifou: "*",
-	minec: "*"
+	minec: "*",
+	property: "*"
 }
 
 init_fun({ fun })

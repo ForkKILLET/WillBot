@@ -3,11 +3,12 @@
 const fs				= require("fs").promises
 const minimist			= require("minimist")
 const { createClient }	= require("oicq")
+const htmlEntities		= require("html-entities")
+side_effect				: require("./util")
 let will				= require("./will")
+const cli				= require("./cli")
 
 // :: Util
-
-Date.sleep = t => new Promise(res => setTimeout(res, t))
 
 const arg = minimist(process.argv.slice(2), {
 	"--": true,
@@ -16,7 +17,8 @@ const arg = minimist(process.argv.slice(2), {
 		uin: "u",
 		password: "p",
 		platform: "f",
-		cli: "i"
+		cli: "i",
+		safesleep: "s"
 	}
 })
 
@@ -30,6 +32,22 @@ const sto = {
 			arg.config ?? `${process.env.HOME}/.config/willbot.json`,
 			new Uint8Array(Buffer.from(JSON.stringify(sto, null, 4)))
 		)
+}
+
+const jobs = []
+
+jobs.reg = job => {
+	const id = jobs.length
+	jobs.push({
+		...job,
+		id,
+		time: Date.now()
+	})
+	return {
+		id,
+		job: jobs[id],
+		rmv: () => jobs.splice(id, 1)
+	}
 }
 
 // :: Init
@@ -48,8 +66,21 @@ void async function init() {
 
 	bot.on("system.offline", async () => {
 		bot.logger.mark("WillBot: The new will is sleeping.")
-		await Date.sleep(5000)
+		await Date.sleep(10000)
 		bot.login(pw)
+	})
+
+	process.on("SIGINT", async () => {
+		await sto.write()
+		if (arg.safesleep && sto?.log.cmds?.[0].match(/^(?!\s*(op\.)?sleep(?! +WillBot::SafeSleep))/)) {
+			await wake("op.sleep WillBot::SafeSleep", {
+				msg: {
+					user_id: bot.uin,
+					reply: t => console.log(t)
+				}
+			})
+			process.exit(0)
+		}
 	})
 
 	bot.on("system.login.slider", () => {
@@ -83,6 +114,7 @@ void async function init() {
 			will.l = true
 			L.sto = sto
 			L.bot = bot
+			L.jobs = jobs
 			L.reload = () => {
 				Object.keys(require.cache)
 					.filter(fp => fp.endsWith("will.js"))
@@ -94,26 +126,21 @@ void async function init() {
 		await will(raw, L)
 	}
 
-	let cli_rl
-	if (arg.cli) bot.on("system.online", () => {
-		cli_rl = require("./cli")(wake, bot, sto)
-	})
+	if (arg.cli) cli(wake, bot, sto, jobs)
 
 	bot.on("message", msg => {
 		try {
 			if (sto.groups.includes(msg.group_id) || msg.message_type === "private") {
 				bot.logger.info(msg)
-				const raw = msg.raw_message.replace(/&#(\d+);/g, (_, c) => String.fromCharCode(c))
-				const pr = sto.prompt.find(s => raw.startsWith(s))
+				const raw = htmlEntities.decode(msg.raw_message)
+				const prompt = sto.prompts.find(s => raw.startsWith(s.split(":")[0]))
 
-				if (pr) wake(raw.slice(pr.length).trim(), {
-					wake, msg,
-					sleep: async () => {
-						await sto.write()
-						bot.logout()
-						cli_rl?.close?.()
-					}
-				})
+				if (prompt) {
+					const [ str, cmd ] = prompt.split(":")
+					wake((cmd ?? "") + raw.slice(str.length).trimStart(), {
+						wake, msg
+					})
+				}
 			}
 		}
 		catch (err) {

@@ -9,6 +9,6 @@ module.exports = (_, fun) => ({
 	},
 	last: src => {1 // Show the last git commit message of a project at [src].
 		if (! src.match(/^[a-z]+$/)) return "Project: Rejected for non-letter [src]"
-		fun.test.$z(`cdsrc ${src}; git log --format=%B -n 1`)
+		return fun.test.$z(`cdsrc ${src}; git log --format=%B -n 1`)
 	}
 })

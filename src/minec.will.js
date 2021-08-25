@@ -5,7 +5,8 @@ module.exports = (L, fun) => ({
 				MineCraftPlugin: {
 					author: "optimize_2",
 					madeBy: "Java",
-					connect: "java.net.ServerSocket"
+					connect: "java.net.ServerSocket",
+					githubRepo: "optimize-2/WillMC"
 				},
 				will: {
 					author: "ForkKILLET",
@@ -20,11 +21,23 @@ module.exports = (L, fun) => ({
 		const net = require("net")
 		const cfg = L.sto.minec?.forward ?? {}
 
-		return new Promise(async (res) => {
+		return new Promise(async (res, rej) => {
 			const cl = new net.Socket()
 
+			const sleep = () => cl.end(() => {
+				rmv()
+				res()
+			})
 			cl.on("error", err => {
-				L.bot.logger.error(err)
+				rmv()
+				rej(err)
+			})
+			const { rmv } = L.jobs.reg({
+				desc: L.raw,
+				sig: {
+					kill: sleep,
+					pause: () => cl.pause()
+				}
 			})
 
 			await new Promise(res => cl.connect({ host, port }, res))
@@ -38,7 +51,8 @@ module.exports = (L, fun) => ({
 			cl.on("data", (buf) => {
 				const txt = buf.toString("utf8")
 				const [ name, raw ] = txt.split(/(?<!:.*):/)
-				if (cfg.mc2qq) L.bot.sendGroupMsg(group, `Minec: ${name}: ${raw}`)
+				if (cfg.mc2qq)
+					L.bot.sendGroupMsg(group, (cfg.before ? `Minec: ` : "") + `${name}: ${raw}`)
 
 				const pr = L.sto.prompt.find(s => raw.startsWith(s))
 				if (cfg.cmd && pr) L.wake("access.sado 2 " + raw.slice(pr.length).trim(), {
@@ -52,9 +66,7 @@ module.exports = (L, fun) => ({
 							card: `WillBot::MC::${group}`
 						}
 					},
-					sleep: async () => {
-						cl.end(res)
-					}
+					sleep
 				})
 			})
 
@@ -70,8 +82,8 @@ module.exports = (L, fun) => ({
 		fun.minec.forward([ host, port, group ])
 		return `Minec: Running Ψ> minec.forward --host ${host} --port ${port} --group ${group}`
 	},
-	forward_config: ([ qq2mc, mc2qq, cmd, host, port, group ] = [ "b", "b", "b", "s", "u", "u" ]) => {3, "fwc" // Config forwarding.
-		Object.entries({ qq2mc, mc2qq, cmd, host, port, group })
+	forward_config: ([ qq2mc, mc2qq, cmd, before, host, port, group ] = [ "b", "b", "b", "b", "s", "u", "u" ]) => {3, "fwc" // Config forwarding.
+		Object.entries({ qq2mc, mc2qq, cmd, host, port, group, before })
 			.forEach(([ k, v ]) => {
 				if (v === undefined) return
 				; ((L.sto.minec ??= {}).forward ??= {})[k] = v
