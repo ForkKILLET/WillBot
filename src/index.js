@@ -46,7 +46,8 @@ jobs.reg = job => {
 	return {
 		id,
 		job: jobs[id],
-		rmv: () => jobs.splice(id, 1)
+		rmv: () => jobs.splice(id, 1),
+		stat: s => jobs[id].stat = s
 	}
 }
 

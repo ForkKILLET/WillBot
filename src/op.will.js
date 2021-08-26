@@ -18,7 +18,7 @@ module.exports = (L, fun) => ({
 	at: ([ uid ] = [ "=u" ]) => {1
 		return `[CQ:at,qq=${uid}]`
 	},
-	sleep: async y => {4 // Let the bot go to bed.
+	sleep: async y => {4, "shutdown" // Let the bot go to bed.
 		await L.msg.reply("Op: Good night to all free and unbreakable wills. "
 			+ (y ? "\n" + y : ""))
 

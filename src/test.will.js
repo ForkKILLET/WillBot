@@ -6,7 +6,7 @@ module.exports = L => {
 	const me = {
 		info: () => {0, "i" // Show bot information.
 			return `
-				WillBot v1.3.0 {
+				WillBot v1.4.0 {
 					author: "ForkKILLET",
 					madeBy: "OICQ",
 					runOn: "${os.type}",
@@ -105,14 +105,20 @@ module.exports = L => {
 				L.bot.logger.mark("WillBot: Write config.")
 			},
 			auto: interval => {4 // Automatically write storage to config file every [interval] seconds.
-				const tid = setInterval(me.sto.write, (+ interval || 1) * 1000)
-				const { rmv } = L.jobs.reg({
+				let on = true
+				const tid = setInterval(() => {
+					if (on) me.sto.write()
+				}, (+ interval || 1) * 1000)
+
+				const { rmv, stat } = L.jobs.reg({
 					desc: L.raw,
 					sig: {
 						kill: () => {
-							clearTimeout(tid)
+							clearInterval(tid)
 							rmv()
-						}
+						},
+						suspend: () => { on = false; stat("suspended") },
+						resume: () => { on = true; stat() }
 					}
 				})
 			}

@@ -269,20 +269,38 @@ const fun = {
 		return `Where: "${cmd}" is ` + (r ? `"${r}"` : "nope")
 	},
 	jobs: {
-		_: () => {3 // Display status of jobs. id# [available signals] @ time: description
+		_: () => {3 // Display status of jobs. id# <stat> [available signals] @ time: description
 			return L.jobs
-				.map(({ desc, time, sig }, id) =>
-					`${id}# [${ Object.keys(sig).join(", ") }] @ ${ new Date(time).toLocaleString() }: ${desc}`
+				.map(({ desc, time, sig, stat }, id) =>
+					`${id}# ${ stat ? `<${stat}> ` : "" }[${ Object.keys(sig).join(", ") }] @ ${ new Date(time).toLocaleString() }: ${desc}`
 				)
 				.join("\n")
 		},
-		kill: _ => {4
+		kill: _ => {4 // Sent a [signal] to a [job]. The default is "kill".
 			let [ id, sig ] = _.trim().split(/\s+/)
 			sig ||= "kill"
 			if (! L.jobs[id]) return "Kill: Job doesn't exist."
 			if (! L.jobs[id].sig?.[sig]) return `Kill: Signal "${sig}" isn't supported.`
 			L.jobs[id].sig[sig]()
 			return `Kill: Signal was sent.`
+		},
+		schedule: _ => {3, "after" // Execute a command after a few [millisecond]s.
+			const [ time, raw ] = _.split(/(?<! .*) +/)
+			const tid = setTimeout(async () => {
+				try {
+					await will(raw)
+				}
+				finally { rmv() }
+			}, + time)
+			const { rmv } = L.jobs.reg({
+				desc: L.raw,
+				sig: {
+					kill: () => {
+						clearTimeout(tid)
+						rmv()
+					}
+				}
+			})
 		}
 	},
 	access: {
@@ -335,22 +353,21 @@ const fun = {
 				throw new access.Error(lv, typeof why === "string" ? why : undefined)
 		},
 
-		sado: _ => {0, "^" // Switch Access DO.
+		sado: async _ => {0, "^" // Switch Access DO.
 			const [ tlv, raw ] = _.split(/(?<! .*) +/)
 			const id = L.msg.user_id
 			const olv = fun.access.get()
 
 			fun.access.set([ id, + tlv ])
 			try {
-				will(raw ?? "")
+				await will(raw ?? "")
 			}
-			catch (err) { throw err }
 			finally {
 				L.sto.access[id] = olv
 			}
 		},
 
-		sudo: _ => {4, "@" // Switch User DO.
+		sudo: async _ => {4, "@" // Switch User DO.
 			let [ uid, raw ] = _.split(/(?<! .*) +/)
 			uid = + uid
 			const old_uid = L.msg.user_id
@@ -362,9 +379,8 @@ const fun = {
 			fun.access.req((L.sto.access[uid] ?? 0) + 1, "Needed lv >= the sudoee")
 			try {
 				L.msg.user_id = uid
-				will(raw ?? "")
+				await will(raw ?? "")
 			}
-			catch (err) { throw err }
 			finally {
 				L.msg.user_id = old_uid
 			}
