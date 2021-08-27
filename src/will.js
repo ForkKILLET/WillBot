@@ -176,10 +176,13 @@ const access = {
 const fun = {
 	">": {
 		_: i => {1 // Run the [i]th lastest command.
-			i ||= 0
-			if (! (i >= 0)) return ">: Expected [idx] >= 0"
+			i = + i || 0
 
-			const raw = L.sto.log.cmds[i]
+			const cmds = L.sto.log.cmds
+			if (i < 0) return ">: Expected [idx] >= 0"
+			if (i >= cmds.length) return `>: Expected [idx] < ${ cmds.length }`
+			const raw = cmds[i]
+
 			L.msg.reply(">: Running Ψ> " + raw)
 			will(raw)
 		},

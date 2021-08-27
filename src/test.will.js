@@ -22,6 +22,7 @@ module.exports = L => {
 			try {
 				/* eslint-disable-next-line */
 				const I = L.msg.user_id
+				const G = L.msg.group_id
 
 				const res = eval(code)
 				return ! man || L.msg.sender.nickname === "WillBot::CLI"
@@ -39,6 +40,8 @@ module.exports = L => {
 				: format(res)
 		},
 		sh: async code => {4, "$" // Execute sh [code].
+			if (! code.trim()) return "Sh: Code is empty."
+
 			return new Promise(res => {
 				const child = cp.exec(code, { timeout: 30 * 1000 }, (err, stdout, stderr) => {
 					let r = (err ? stderr : stdout).replace(/\x1B\[\d?;?\d{0,2}[a-z]/g, "")
@@ -63,6 +66,8 @@ module.exports = L => {
 			})
 		},
 		zsh: code => {4, "$z" // Execute zsh [code], sourcing ".zshrc".
+			if (! code.trim()) return "Zsh: Code is empty."
+
 			return me.sh(`
 				zsh << WillBot::ZSH
 				source ~/.zshrc > /dev/null
