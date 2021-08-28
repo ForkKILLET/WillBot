@@ -286,9 +286,11 @@ const fun = {
 			if (! L.jobs[id].sig?.[sig]) return `Kill: Signal "${sig}" isn't supported.`
 			L.jobs[id].sig[sig]()
 			return `Kill: Signal was sent.`
-		},
-		schedule: _ => {3, "after" // Execute a command after a few [millisecond]s.
-			const [ time, raw ] = _.split(/(?<! .*) +/)
+		}
+	},
+	wait: {
+		_: _ => {3, "for" // Execute a [command] after a few [millisecond]s.
+			const [ time, raw ] = _ instanceof Array ? _ : _.split(/(?<! .*) +/)
 			const tid = setTimeout(async () => {
 				try {
 					await will(raw)
@@ -304,6 +306,10 @@ const fun = {
 					}
 				}
 			})
+		},
+		until: _ => {3 // Execute a [command] until specific [moment].
+			const [ time, raw ] = _.split(/(?<! .*) +/)
+			return fun.wait.for([ new Date(time) - new Date(), raw ])
 		}
 	},
 	access: {
