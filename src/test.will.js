@@ -20,9 +20,10 @@ module.exports = L => {
 		},
 		eval: (code, man) => {4, "e", "~" // Evaluate javascript [code].
 			try {
-				/* eslint-disable-next-line */
+				/* eslint-disable */
 				const I = L.msg.user_id
 				const G = L.msg.group_id
+				/* eslint-enable */
 
 				const res = eval(code)
 				return ! man || L.msg.sender.nickname === "WillBot::CLI"

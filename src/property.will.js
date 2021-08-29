@@ -57,7 +57,7 @@ module.exports = (L, fun) => {
 				return man
 					? `${u} ` + (n
 						? `有 ${n} 种破烂：${ junks.map(junk => desc(junk.n, junk)).join("，") }`
-						: `没得破烂`
+						: "没得破烂"
 					)
 					: junks
 			},
@@ -65,13 +65,19 @@ module.exports = (L, fun) => {
 				const [ u, i, n ] = _ instanceof Array ? _ : _.split(/ +/).map(i => + i)
 				const junks = me.junk.get(u)
 
-				const junk = typeof i === "string"
-					? junks.find(({ id }) => id === i)
-					: (junks.push(i), i)
+				console.log(junks)
+
+				let junk = junks.find(({ id }) => id === i?.id ?? i)
+
+				console.log(junk)
+
+				if (! junk)
+					if (typeof i === "number") return "没这破烂"
+					else junks.push(junk = i)
 				junk.n ??= 0; junk.n += n
 
 				return man
-					? `${u} ${ n >= 0 ? "增加" : "减少" }了${ desc(junk, Math.abs(n)) }`
+					? `${u} ${ n >= 0 ? "增加" : "减少" }了${ desc(Math.abs(n), junk) }`
 					: junk.n
 			}
 		},

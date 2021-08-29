@@ -13,9 +13,8 @@ module.exports = (L, fun) => ({
 				"Needed lv >= the bot when the words to echo starts with a prompt"
 			)
 			return t
-		}
-	},
-	at: ([ uid ] = [ "=u" ]) => {1
+		} },
+	at: ([ uid ] = [ "=U" ]) => {1 // Just at someone.
 		return `[CQ:at,qq=${uid}]`
 	},
 	sleep: async y => {4, "shutdown" // Let the bot go to bed.
@@ -35,17 +34,31 @@ module.exports = (L, fun) => ({
 		await L.sto.write()
 		await L.bot.logout()
 	},
-	card: ([ uid, card ] = [ "u", "=s" ]) => {4 // Set group card.
-		L.bot.setGroupCard(L.msg.group_id, uid ?? L.bot.uin, card)
-		return `Op: Whatever ${ uid ? "one" : "I" } name, ${ uid ? "wish his" : "my" } will won't change.`
+	card: ([ uid, card ] = [ "U", "!=s" ]) => {4 // Set group card.
+		uid ??= L.bot.uin
+		if (uid !== L.msg.user_id) fun.access.req(
+			Math.max(3, uid === L.bot.uin ? 0 : fun.access.get(uid) + 1),
+			"Needed level > the settee unless it's WillBot, and >= 3 when changing others' card"
+		)
+		L.bot.setGroupCard(L.msg.group_id, uid, card)
+		return `Op: Whatever ${ uid ? "one" : "I" } name, `
+			+ `${ uid === L.bot.uin ? "my" : "wish his" } will won't change.`
 	},
-	like: ([ id, times ] = [ "=u", "u" ]) => {3 // Send 10 likes to specific [id] or yourself.
+	like: ([ id, times ] = [ "!=U", "u" ]) => {3 // Send 10 likes to specific [id] or yourself.
 		id ||= L.msg.user_id
 		L.bot.sendLike(id, times ?? 10)
 		return "Op: Greet the one favored by the Upper Will."
 	},
-	gag: ([ uid, duration ] = [ "u", "=u" ]) => {3 // Gag [uid] or yourself for [duration] seconds.
+	gag: ([ uid, duration ] = [ "U", "=u" ]) => {0 // Gag [uid] or yourself for [duration] seconds.
+		if (uid !== L.msg.user_id) fun.access.req(
+			Math.max(3, fun.access.get(uid) + 1),
+			"Needed level > the settee and >= 3 when gagging others"
+		)
 		L.bot.setGroupBan(L.msg.group_id, uid ?? L.msg.user_id, duration ?? 60)
 		return "Op: Silence is good sacrifice to the Upper Will."
+	},
+	withdraw: ([ mid ] = [ "=s" ]) => {3 // Withdraw a message with [mid]
+		L.bot.deleteMsg(mid)
+		return "Op: Secrets are to be revealed."
 	}
 })

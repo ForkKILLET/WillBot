@@ -4,27 +4,75 @@ const mm = require("minimist")
 
 // :: Util
 
+const cqi2cq = s => {
+	const i = s?.match?.(/^\[CQI:(\d+)]$/)?.[1]
+	if (i && L.msg.message) return L.msg.message.filter(({ type }) => type !== "text")[+ i]
+}
+
 const type = {
 	Error: class extends TypeError {
 		constructor(msg) {
 			super(msg)
 			this.code = "WillBot::ArgTypeErr"
 		}
-		when(f, a) {
-			this.message = `Arg: When parsing arg "${a}" for "${f}" got ${this.message}`
+		arg(arg) {
+			this.message = `Arg: When parsing arg "${arg}" got ${this.message}`
 			return this
 		}
 	},
 	s: s => s,
 	u: s => {
-		const v = Number(s)
+		const v = + s
 		if (isNaN(v)) throw new type.Error(`${s} is not a number.`)
 		if (v < 0) throw new type.Error(`${s} is not unsigned.`)
+		return v
+	},
+	U: s => {
+		const cq = cqi2cq(s)
+		if (cq) return cq.data.qq
+
+		const v = + s
+		if (isNaN(v) || v < 10001) throw new type.Error(`${s} is not a qq uid.`)
 		return v
 	},
 	b: s => {
 		if (typeof s !== "boolean") throw new type.Error(`${s} is not a boolean`)
 		return s
+	}
+}
+
+const raw_arg = {
+	QuoteError: class extends SyntaxError {
+		constructor() {
+			super(`Arg: Quote(") isn't matched.`)
+			this.code = "WillBot::ArgQuoteErr"
+		}
+	},
+	cook: raw => {
+		const tokens = (raw ?? "").split(/\s+/), ps = []
+
+		let q = 0, p = ""
+		for (let i = 0; i < tokens.length; i ++) {
+			let t = tokens[i]
+			const n = t.match(/"/g)?.length ?? 0
+			t = t.replace(/"/g, "")
+
+			if (n % 2) {
+				p += (q ? " " : "") + t
+				if (q) {
+					ps.push(p)
+					p = ""
+				}
+				q = ! q
+			}
+			else {
+				if (q) p += " " + t
+				else ps.push(t)
+			}
+		}
+		if (q) throw new raw_arg.QuoteError()
+
+		return mm(ps)
 	}
 }
 
@@ -128,19 +176,21 @@ const will = async (raw, new_L) => {
 	try {
 		fun.access.req(f.lv)
 		if (f.param) {
-			const ps = mm((arg ?? []).split(/\s+/))
+			const ps = raw_arg.cook(arg)
 			arg = []
 			for (const [ name, req, f_d, f_e ] of f.param) {
-				let a = undefined
-				a = ps[name] ?? ps[name[0]]
+				let a = ps[name] ?? ps[name[0]]
 				if (f_d) a ??= ps._.join(" ")
 
-				try {
+				if (! a) {
+					if (f_e) throw new type.Error("nothing").arg(name)
+					else arg.push(undefined)
+				}
+				else try {
 					arg.push(type[req](a))
 				}
 				catch (err) {
-					if (f_e) throw err.when(real_cmd, name)
-					else arg.push(undefined)
+					throw err.arg(name)
 				}
 			}
 		}
@@ -151,7 +201,8 @@ const will = async (raw, new_L) => {
 		switch (err?.code) {
 		case "WillBot::AccessErr":
 		case "WillBot::ArgTypeErr":
-			await L.msg.reply(err.message)
+		case "WillBot::ArgQuoteErr":
+			await L.msg.reply(err.message + ` @ "${real_cmd}"`)
 			break
 		default:
 			L.bot.logger.error(err)

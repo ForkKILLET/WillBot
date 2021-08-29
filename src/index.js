@@ -133,7 +133,14 @@ void async function init() {
 		try {
 			if (sto.groups.includes(msg.group_id) || msg.message_type === "private") {
 				bot.logger.info(msg)
-				const raw = htmlEntities.decode(msg.raw_message)
+
+				let cq_i = 0
+				const raw = htmlEntities
+					.decode(msg.raw_message)
+					.replace(
+						/\[CQ:(at|face|bface|dice|rps|image|record|flash|anonymous|file|music|location|reply|shake|poke|xml|json|share|video|node|mirai)(,[a-z]+?=.+?)*?]/g,
+						() => `[CQI:${ cq_i ++ }]`
+					)
 				const prompt = sto.prompts.find(s => raw.startsWith(s.split(":")[0]))
 
 				if (prompt) {
