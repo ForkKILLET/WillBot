@@ -30,8 +30,12 @@ module.exports = (L, fun) => ({
 			const { reply, p } = fun.dice.jrrp._()
 			return reply + (table[p] ? " === " + table[p] + `（先辈分布）` : "！论证失败（悲）")
 		},
-		clear: () => {2, "c" // Clear JinRi RenPin.
-			; ((L.sto.dice ??= {})[L.msg.user_id] ??= {}).jrrp = {
+		clear: bang => {2, "c" // Clear JinRi RenPin.
+			if (bang = bang === "!") fun.access.req(
+				3,
+				"Needed lv >= 3 to completely clear JinRi RenPin."
+			)
+			; ((L.sto.dice ??= {})[L.msg.user_id] ??= {}).jrrp = bang ? null : {
 				t: new Date,
 				cleared: true
 			}
@@ -100,6 +104,7 @@ module.exports = (L, fun) => ({
 			return `Dice: Rejected for [point] when "st"ed`
 		case 1:
 			const p = sp ?? mp
+			if (p > 110 || p < - 10) return `Dice: Rejected for abnormal points.`
 			const p2 = Math.floor(p / 2), p5 = Math.floor(p / 5)
 			const rp = fun.dice.r("")
 			return `${ L.msg.sender.nickname } 掷骰 ${n}：d100 = ${rp} / ${p}`

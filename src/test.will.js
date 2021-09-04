@@ -6,7 +6,7 @@ module.exports = L => {
 	const me = {
 		info: () => {0, "i" // Show bot information.
 			return `
-				WillBot v1.4.0 {
+				WillBot v1.5.0 {
 					author: "ForkKILLET",
 					madeBy: "OICQ",
 					runOn: "${os.type}",

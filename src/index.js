@@ -135,12 +135,12 @@ void async function init() {
 				bot.logger.info(msg)
 
 				let cq_i = 0
-				const raw = htmlEntities
-					.decode(msg.raw_message)
+				const raw = htmlEntities.decode(msg.raw_message
 					.replace(
-						/\[CQ:(at|face|bface|dice|rps|image|record|flash|anonymous|file|music|location|reply|shake|poke|xml|json|share|video|node|mirai)(,[a-z]+?=.+?)*?]/g,
+						/\&#5b;CQ:(at|face|bface|dice|rps|image|record|flash|anonymous|file|music|location|reply|shake|poke|xml|json|share|video|node|mirai)(,[a-z]+?=.+?)*?&#5d;/g,
 						() => `[CQI:${ cq_i ++ }]`
 					)
+				)
 				const prompt = sto.prompts.find(s => raw.startsWith(s.split(":")[0]))
 
 				if (prompt) {
