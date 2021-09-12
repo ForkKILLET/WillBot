@@ -93,7 +93,7 @@ module.exports = (L, fun) => {
 				if (! product) return "商品不存在，请用序号或 ID 搜索"
 
 				const coin = me.coin.get()
-				const max_n = ~~ (coin.n / product.price)
+				const max_n = Math.floor (coin.n / product.price)
 				n = n ? + n : max_n
 				const cost = n * product.price
 				if (n > max_n) return `你没那么多钱。还差 ${ cost - coin.n } 个硬币`
