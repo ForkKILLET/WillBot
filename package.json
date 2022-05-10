@@ -1,0 +1,28 @@
+{
+  "name": "willbot-beta-workspace",
+  "version": "0.1.0",
+  "main": "src/core/index.js",
+  "repository": "git@github.com:ForkKILLET/WillBot.git",
+  "author": "ForkΨKILLET <fork_killet@qq.com>",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "chalk": "^5.0.1",
+    "chalk-template": "^0.4.0",
+    "js-yaml": "^4.1.0",
+    "minimist": "^1.2.6",
+    "mkfifo": "^2.1.0",
+    "mongodb": "^4.5.0",
+    "oicq": "^2.2.2"
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.17.0",
+    "@babel/plugin-syntax-top-level-await": "^7.14.5",
+    "eslint": "^8.14.0"
+  },
+  "scripts": {
+    "lint": "eslint --fix src/",
+    "lint:nofix": "eslint src/",
+    "start": "./src/core/index.js"
+  }
+}
