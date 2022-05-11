@@ -9,7 +9,7 @@ const helphelp = {
 	__inited: true,
 	alias: [ 'help' ],
 	args: [],
-	fn: () => `?: alias: help\nusage: ?\nhelp: get help`,
+	fn: () => '?: alias: help\nusage: ?\nhelp: get help',
 	subs: {}
 }
 
@@ -30,7 +30,12 @@ const _initCmd = (cmd, cmdName) => {
 			+ (cmd.alias?.length ? `alias: ${cmd.alias.join(', ')}\n` : '')
 			+ `subs: ${Object.keys(subs).join(', ') || 'none'}\n`
 			+ (cmd.args
-				? `usage: ${cmdName} ${cmd.args.map(({ ty, name }) => ty[0] === '$' ? '' : `<${name}: ${ty}>`).filter(s => s).join(' ')}\n`
+				? `usage: ${cmdName} ${
+					cmd.args.map(({ ty, name, opt }) => ty[0] === '$'
+						? ''
+						: (opt ? `[${name}: ${ty}]` : `<${name}: ${ty}>`)
+					).filter(s => s).join(' ')
+				}\n`
 				: 'no usage\n'
 			)
 			+ `help: ${cmd.help ?? 'no information'}`,
@@ -81,11 +86,15 @@ export const runCmd = async (msg) => {
 	try {
 		const cmd = findCmd(cmdName)
 		if (! cmd) throw 'not found'
+		if (! cmd.fn) throw 'not executable'
 
 		const cookedArgs = cmd.args.map(rule => {
+			let argErr = `arg <${rule.ty}>: `
 			switch (rule.ty) {
 			case '$msg':
 				return msg
+			case '$uid':
+				return msg.sender.user_id
 			case '$flags':
 				return flags
 			case '$tokens':
@@ -93,10 +102,14 @@ export const runCmd = async (msg) => {
 			case 'text':
 				return args.splice(0).join(' ')
 			case 'str':
-			case 'number': {
+			case 'num': {
 				let arg = args.shift()
-				if (arg === undefined) throw 'too few args'
-				if (rule.ty === 'number') arg = + arg
+				if (arg === undefined && ! rule.opt) throw 'too few args'
+				if (rule.ty === 'num') {
+					arg = + arg
+					if (isNaN(arg)) throw argErr + 'not a number'
+					if (rule.int && (arg | 0) !== arg) throw argErr + 'not an integer'
+				}
 				return arg
 			}
 			default:
@@ -108,9 +121,10 @@ export const runCmd = async (msg) => {
 
 		try {
 			const reply = await cmd.fn(...cookedArgs)
-			await msg.reply(reply)
+			if (reply != null) await msg.reply(reply)
 		}
 		catch (err) {
+			bot.logger.err(`Caught internal error in ${cmdName}`)(err)
 			throw (err?.message ?? err) + ' (internal error)'
 		}
 	}

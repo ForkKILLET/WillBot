@@ -10,7 +10,11 @@ export const getConfig = async (bot) => {
 }
 
 export const configRule = {
-	'log-level': 'string?',
+	log: {
+		level: 'string?',
+		file: 'string?',
+		stdout: 'boolean?'
+	},
 	account: {
 		uin: 'number',
 		pw: 'string'

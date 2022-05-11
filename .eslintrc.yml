@@ -3,10 +3,15 @@ env:
   es2021: true
   node: true
 extends: 'eslint:recommended'
-parser: @babel/eslint-parser
+parser: '@babel/eslint-parser'
 parserOptions:
   sourceType: module
   ecmaVersion: 2021
+  requireConfigFile: false
+  babelOptions:
+    plugins:
+      - '@babel/syntax-top-level-await'
+      - '@babel/syntax-import-assertions'
 rules:
   indent:
     - error
@@ -20,5 +25,7 @@ rules:
   semi:
     - error
     - never
+  no-constant-condition:
+    - off
 globals:
   bot: true

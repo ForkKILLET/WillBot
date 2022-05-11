@@ -25,7 +25,8 @@ const startBot = async (logger) => {
 
 	await loadAll()
 
-	Logger.lv = bot.cfg['log-level'] ?? 'warn'
+	logger.opt.logFile = bot.cfg.log.file
+	Logger.lv = bot.cfg.log.level ?? 'warn'
 
 	const { addr, port, name } = bot.cfg.database
 	const uri = encodeURI(`mongodb://${addr}:${port}`)
@@ -48,14 +49,14 @@ const startBot = async (logger) => {
 			data_dir: path.resolve(bot.cliArg['rc-path'], 'oicq-data')
 		})
 		bot.oicq = oicq
-		oicq.logger = new Logger({ prefix: chalkT`[{yellow OICQ}] ` })
+		oicq.logger = new Logger({
+			prefix: chalkT`[{yellow OICQ}] `,
+			logFile: bot.cfg.log.file
+		})
 		await oicq.login(pw)
 
 		await new Promise(res => bot.oicq.on('system.online', res))
 		logger.mark('Logged in.')
-
-		logger.mark('Starting REPL.')
-		bot.repls = await bot.repl.startREPL()
 
 		oicq.on('message', async (msg) => {
 			const prompt = bot.cfg.commands.prompts.find(s => msg.raw_message.startsWith(s))
@@ -66,13 +67,17 @@ const startBot = async (logger) => {
 		})
 	}
 
+	logger.mark('Starting REPL.')
+	bot.repls = await bot.repl.startREPL()
 
 	return bot
 }
 
 const main = async () => {
-	const logger = new Logger({ prefix: chalkT`[{cyanBright WB-β}] ` })
-	await startBot(logger).catch(logger.err('Failed to start bot:'))
+	const logger = new Logger({
+		prefix: chalkT`[{cyanBright WB-β}] `
+	})
+	await startBot(logger).catch(logger.err('Failed to start bot:', 1))
 
 	process.on('exit', (code) => {
 		bot.logger.mark(`Exit with status code ${code}`)
