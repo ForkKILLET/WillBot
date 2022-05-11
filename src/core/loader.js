@@ -1,15 +1,19 @@
 export const modules = {
 	loader: {
-		path: './loader'
+		path: './loader.js'
+	},
+	pack: {
+		path: '../../package.json',
+		assert: { type: 'json' }
 	},
 	config: {
-		path: './config'
+		path: './config.js'
 	},
 	repl: {
-		path: './repl'
+		path: './repl.js'
 	},
 	command: {
-		path: './commands'
+		path: './commands.js'
 	}
 }
 
@@ -24,6 +28,6 @@ export const load = async (name) => {
 	const module = modules[name]
 	if (! module) throw `module ${name}: not found`
 	else {
-		bot[name] = await import(`${module.path}.js?date=${Date.now()}`)
+		bot[name] = await import(`${module.path}?date=${Date.now()}`, { assert: module.assert })
 	}
 }

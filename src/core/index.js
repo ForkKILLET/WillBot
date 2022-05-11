@@ -7,10 +7,9 @@ import { MongoClient }	from 'mongodb'
 import chalkT			from 'chalk-template'
 import Logger			from '../util/logger.js'
 import { loadAll }		from './loader.js'
-import pack				from '../../package.json' assert { type: 'json' }
 
 const startBot = async (logger) => {
-	global.bot = { logger, pack }
+	global.bot = { logger }
 
 	bot.cliArg = minimist(process.argv.slice(2), {
 		alias: {

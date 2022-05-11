@@ -18,8 +18,7 @@
     "mkfifo": "^2.1.0",
     "mongodb": "^4.5.0",
     "oicq": "^2.2.2",
-    "puppeteer": "^14.0.0",
-    "stream-to": "^2.0.0"
+    "puppeteer": "^14.0.0"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.17.0",
