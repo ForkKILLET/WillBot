@@ -178,6 +178,7 @@ export default () => {
 				if (games[name]) return `已经存在游戏 ${name}`
 				if (players[uid]) return `您已经有正在进行的游戏 ${players[uid]}`
 				if (name.length > 8) return '命名不能超过 8 个字符'
+				if (name.includes('@')) return '命名不能包含 `@` 字符'
 				
 				const cvs = canvas.createCanvas(290, 220)
 				const ctx = cvs.getContext('2d')
@@ -504,12 +505,19 @@ export default () => {
 					}
 				},
 				list: {
-					args: [],
-					help: '列出所有保存的记录 id',
-					fn: async () => {
+					args: [ { ty: 'str', name: 'name', opt: true } ],
+					help: '列出所有保存的记录 id，可用 [name] 指定游戏名称',
+					fn: async (name) => {
 						const ids = await bot.mongo.db
 							.collection('pyrga')
-							.find()
+							.find(name
+								? {
+									$where () {
+										return this._id.startsWith(name + '@')
+									}
+								}
+								: {}
+							)
 							.project({ _id: 1 })
 							.map(x => x._id)
 							.toArray()
