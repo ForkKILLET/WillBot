@@ -2,6 +2,7 @@ import canvas			from 'canvas'
 import relativeTime		from 'dayjs/plugin/relativeTime.js'
 import dayjs			from 'dayjs'; dayjs.extend(relativeTime)
 import { segment }		from 'oicq'
+import GIFEncoder		from 'gifencoder'
 import { cloneJSON }	from '../util/toolkit.js'
 
 export default () => {
@@ -128,6 +129,44 @@ export default () => {
 		drawPiece(type, ctx, 40, ...posOfPieceOnBoard(row, col))
 	}
 
+	const drawInit = () => {
+		const cvs = canvas.createCanvas(290, 220)
+		const ctx = cvs.getContext('2d')
+
+		// Note: 白色背景
+
+		ctx.fillStyle = '#fff'
+		ctx.fillRect(0, 0, 290, 220)
+
+		// Note: 棋盘
+		ctx.strokeStyle = '#000'
+		ctx.rect(10, 10, 200, 200)
+		for (let i = 1; i <= 3; i ++) {
+			ctx.moveTo(10 + 50 * i, 10)
+			ctx.lineTo(10 + 50 * i, 210)
+			ctx.moveTo(10, 10 + 50 * i)
+			ctx.lineTo(210, 10 + 50 * i)
+		}
+		ctx.stroke()
+
+		// Note: 手中棋子
+		for (let player = 0; player < 2; player ++) {
+			ctx.strokeStyle = colors[player]
+			for (let type = 0; type < 3; type ++) {
+				for (let i = 0; i < 5; i ++) {
+					drawPiece(
+						type, ctx, 10,
+						...posOfPieceInHand(player, type, i)
+					)
+				}
+			}
+		}
+
+		return { cvs, ctx }
+	}
+
+
+
 	const colors = [ '#f00', '#00f' ]
 	const colorNames = [ '红方', '蓝方' ]
 
@@ -160,7 +199,8 @@ export default () => {
 							subs.show.fn(name, uid),
 							[ 0, 1 ].map(player => `${colorNames[player]}：${game.players[player] || '暂无'}`).join('\n') + '\n' +
 							`游戏时长：${dayjs(game.startTime).fromNow(true)}\n` +
-							`回合数：${game.round}`
+							`回合数：${game.round}` +
+							(game.final ? '\n对手无子可落，游戏结束\n' + subs.tower.fn(name, uid) : '')
 						]
 					}
 				},
@@ -179,9 +219,8 @@ export default () => {
 				if (players[uid]) return `您已经有正在进行的游戏 ${players[uid]}`
 				if (name.length > 8) return '命名不能超过 8 个字符'
 				if (name.includes('@')) return '命名不能包含 `@` 字符'
-				
-				const cvs = canvas.createCanvas(290, 220)
-				const ctx = cvs.getContext('2d')
+	
+				const { cvs, ctx } = drawInit()
 
 				const game = games[players[uid] = name] = {
 					players: [ uid ],
@@ -200,34 +239,7 @@ export default () => {
 					)
 				})
 
-				// Note: 白色背景
-
-				ctx.fillStyle = '#fff'
-				ctx.fillRect(0, 0, 290, 220)
-
-				// Note: 棋盘
-				ctx.strokeStyle = '#000'
-				ctx.rect(10, 10, 200, 200)
-				for (let i = 1; i <= 3; i ++) {
-					ctx.moveTo(10 + 50 * i, 10)
-					ctx.lineTo(10 + 50 * i, 210)
-					ctx.moveTo(10, 10 + 50 * i)
-					ctx.lineTo(210, 10 + 50 * i)
-				}
-				ctx.stroke()
-
-				// Note: 手中棋子
-				for (let player = 0; player < 2; player ++) {
-					ctx.strokeStyle = colors[player]
-					for (let type = 0; type < 3; type ++) {
-						for (let i = 0; i < 5; i ++) {
-							drawPiece(
-								type, ctx, 10,
-								...posOfPieceInHand(player, type, i)
-							)
-						}
-					}
-				}
+				drawInit({  })
 
 				return customInit ? game : [
 					subs.show.fn(name),
@@ -436,11 +448,9 @@ export default () => {
 				if (! game.ltdPos.length) {
 					if (! game.board.some(
 						(row) => row.some(
-							(block) => block.find(
-								(x, t) => typeof x === 'number' && game.pieces[player ^ 1][t] > 0
-							)
+							(block) => block.every(x => x === null)
 						)
-					)) {
+					) || game.pieces[player ^ 1].every(x => x === 0)) {
 						game.final = true
 						reply += '\n对手无子可落，游戏结束\n'
 							+ subs.tower.fn(name, uid)
@@ -506,6 +516,36 @@ export default () => {
 							subs.show.fn(name, uid),
 							reply
 						]
+					}
+				},
+				replay: {
+					args: [
+						{ ty: 'str', name: 'id' },
+						{ ty: 'num', name: 'delay', opt: true }
+					],
+					help: '或许 id 为 <id> 的记录的回放 gif 动图，每帧延迟 [delay] 毫秒，默认 800',
+					fn: async (id, delay) => {
+						const game = await bot.mongo.db
+							.collection('pyrga')
+							.findOne({ _id: id })
+
+						if (! game) return `不存在 id 为 ${id} 的记录`
+
+						const gif = new GIFEncoder(290, 220)
+						const stream = gif.createReadStream()
+						gif.start()
+						gif.setRepeat(0)
+						gif.setDelay(delay ?? 800)
+						
+						const { ctx } = drawInit()
+						game.record.forEach(place => {
+							drawPlace({ ...place, ctx })
+							gif.addFrame(ctx)
+						})
+
+						gif.finish()
+
+						return segment.image(stream)
 					}
 				},
 				list: {
