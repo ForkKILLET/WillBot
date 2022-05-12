@@ -2,6 +2,7 @@ import canvas			from 'canvas'
 import relativeTime		from 'dayjs/plugin/relativeTime.js'
 import dayjs			from 'dayjs'; dayjs.extend(relativeTime)
 import { segment }		from 'oicq'
+import { cloneJSON }	from '../util/toolkit.js'
 
 export default () => {
 	const { games, players } = bot.chess ??= { games: {}, players: {} } 
@@ -114,6 +115,19 @@ export default () => {
 		return towers
 	}
 
+	const drawPlace = ({ row, col, player, ctx, type, typeWithoutDir, pieceNum }) => {
+		// Note: 擦除手中棋子
+		ctx.strokeStyle = '#fff'
+		drawPiece(
+			typeWithoutDir, ctx, 10,
+			...posOfPieceInHand(player, typeWithoutDir, pieceNum)
+		)
+
+		// Note: 绘制棋子
+		ctx.strokeStyle = colors[player]
+		drawPiece(type, ctx, 40, ...posOfPieceOnBoard(row, col))
+	}
+
 	const colors = [ '#f00', '#00f' ]
 	const colorNames = [ '红方', '蓝方' ]
 
@@ -160,7 +174,7 @@ export default () => {
 		start: {
 			args: [ { ty: 'str', name: 'name' }, { ty: '$uid' } ],
 			help: '开启一局命名为 <name> 的游戏',
-			fn: (name, uid) => {
+			fn: (name, uid, customInit) => {
 				if (games[name]) return `已经存在游戏 ${name}`
 				if (players[uid]) return `您已经有正在进行的游戏 ${players[uid]}`
 				if (name.length > 8) return '命名不能超过 8 个字符'
@@ -168,18 +182,22 @@ export default () => {
 				const cvs = canvas.createCanvas(290, 220)
 				const ctx = cvs.getContext('2d')
 
-				games[players[uid] = name] = {
+				const game = games[players[uid] = name] = {
 					players: [ uid ],
 					startTime: new Date,
-					cvs, ctx,
+					cvs, ctx
+				}
+
+				if (! customInit) Object.assign(game, {
 					round: 0,
 					pieces: [0, 1].map(() => [ 5, 5, 5 ]),
+					record: [],
 					board: Array.from({ length: 4 },
 						() => Array.from({ length: 4 },
 							() => [ null, null, null ]
 						)
 					)
-				}
+				})
 
 				// Note: 白色背景
 
@@ -210,7 +228,7 @@ export default () => {
 					}
 				}
 
-				return [
+				return customInit ? game : [
 					subs.show.fn(name),
 					'游戏开始'
 				]
@@ -367,8 +385,9 @@ export default () => {
 				// Note: 以上均为允许落子判定，不修改游戏数据
 
 				game.round ++
-
 				const pieceNum = -- game.pieces[player][typeWithoutDir]
+				game.record.push({ row, col, player, type, typeWithoutDir, pieceNum })
+
 				block[typeWithoutDir] = player
 
 				if (game.lastPlace === undefined) {
@@ -401,23 +420,14 @@ export default () => {
 				}
 				}
 
-
 				game.ltdPos = game.ltdPos.filter(([ r, c ]) =>
 					game.board[r - 1][c - 1].some((x, t) =>
 						x === null && game.pieces[player ^ 1][t] > 0
 					)
 				)
 
-				// Note: 擦除手中棋子
-				game.ctx.strokeStyle = '#fff'
-				drawPiece(
-					typeWithoutDir, game.ctx, 10,
-					...posOfPieceInHand(player, typeWithoutDir, pieceNum)
-				)
-
-				// Note: 绘制棋子
-				game.ctx.strokeStyle = colors[player]
-				drawPiece(type, game.ctx, 40, ...posOfPieceOnBoard(row, col))
+				// Note: 绘制落子
+				drawPlace({ row, col, player, ctx: game.ctx, type, typeWithoutDir, pieceNum })
 
 				reply += `您在 (${row}, ${col}) 落了一个【${typeName}】`
 
@@ -430,6 +440,7 @@ export default () => {
 							)
 						)
 					)) {
+						game.final = true
 						reply += '\n对手无子可落，游戏结束\n'
 							+ subs.tower.fn(name, uid)
 					}
@@ -441,21 +452,90 @@ export default () => {
 				]
 			}
 		},
-		// save: {
-		// 	args: [ { ty: '$uid' } ],
-		// 	help: '保存当前游戏进度到数据库',
-		// 	fn: async (uid) => {
-		// 		const name = players[uid]
-		// 		if (! name) return '您不在游戏中'
+		records: {
+			alias: [ 'db' ],
+			help: '游戏进度记录',
+			subs: {
+				save: {
+					args: [ { ty: '$uid' } ],
+					help: '保存当前游戏进度',
+					fn: async (uid) => {
+						const name = players[uid]
+						if (! name) return '您不在游戏中'
 
-		// 		const game = cloneJSON(games[name])
-		// 		game._id = `${name}@${new Date().toJSON()}`
+						let game = { ...games[name] }
+						delete game.cvs
+						delete game.ctx
+						game._id = `${name}@${new Date().toJSON()}`
+						game = cloneJSON(game)
 
-		// 		await bot.db.collection('pyrga').insertOne(game)
+						await bot.mongo.db
+							.collection('pyrga')
+							.insertOne(game)
 
-		// 		return `已保存为 ${game._id}`
-		// 	}
-		// }
+						return `已保存为 ${game._id}`
+					}
+				},
+				load: {
+					args: [
+						{ ty: 'str', name: 'id' },
+						{ ty: 'str', name: 'name' },
+						{ ty: '$uid' }
+					],
+					help: '加载 id 为 <id> 的记录到新游戏 <name> 中',
+					fn: async (id, name, uid) => {
+						const game = await bot.mongo.db
+							.collection('pyrga')
+							.findOne({ _id: id })
+
+						if (! game) return `不存在 id 为 ${id} 的记录`
+
+						const res = await subs.start.fn(name, uid, true)
+						if (typeof res === 'string') return res // Note: error
+
+						Object.assign(game, res)
+
+						game.record.forEach(place => drawPlace({ ...place, ctx: game.ctx }))
+
+						return [
+							subs.show.fn(name, uid),
+							`已加载 id 为 ${id} 的记录，游戏开始`
+						]
+					}
+				},
+				list: {
+					args: [],
+					help: '列出所有保存的记录 id',
+					fn: async () => {
+						const ids = await bot.mongo.db
+							.collection('pyrga')
+							.find()
+							.project({ _id: 1 })
+							.map(x => x._id)
+							.toArray()
+						return ids.join('\n') || '暂无记录'
+					}
+				},
+				remove: {
+					args: [ { ty: 'str', name: 'id' }, { ty: '$uid' } ],
+					help: '删除 id 为 <id> 的记录',
+					fn: async (id, uid) => {
+						const game = await bot.mongo.db
+							.collection('pyrga')
+							.findOne({ _id: id })
+
+						if (! game) return `不存在 id 为 ${id} 的记录`
+						if (! game.players.includes(uid)) return '您不是记录中的玩家，不能删除该记录'
+
+						await bot.mongo.db
+							.collection('pyrga')
+							.deleteOne({ _id: id })
+
+						return `id 为 ${id} 的记录已删除`
+					}
+				}
+			}
+		}
 	}
 
 	return {
