@@ -105,7 +105,7 @@ export default () => {
 				(row, r) => (row.forEach(
 					(block, c) => {
 						if (block.reduce(
-							(acc, owner) => acc + (owner === player), 0
+							(acc, owner) => acc + (owner === null ? -1 : owner === player), 0
 						) >= 2) towers[player].push([ r, c ])
 					})
 				)
@@ -403,8 +403,8 @@ export default () => {
 
 
 				game.ltdPos = game.ltdPos.filter(([ r, c ]) =>
-					game.board[r - 1][c - 1].some((placed, t) =>
-						! placed && game.pieces[player ^ 1][t] > 0
+					game.board[r - 1][c - 1].some((x, t) =>
+						x === null && game.pieces[player ^ 1][t] > 0
 					)
 				)
 
@@ -425,11 +425,13 @@ export default () => {
 				if (! game.ltdPos.length) {
 					if (! game.board.some(
 						(row) => row.some(
-							(block) => ! block.find(x => typeof x === 'number')
+							(block) => block.find(
+								(x, t) => typeof x === 'number' && game.pieces[player ^ 1][t] > 0
+							)
 						)
 					)) {
-						return '对手无子可落，游戏结束\n'
-							+ subs.fn.tower(game)
+						reply += '\n对手无子可落，游戏结束\n'
+							+ subs.tower.fn(name, uid)
 					}
 				} 
 
