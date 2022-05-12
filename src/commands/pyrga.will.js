@@ -107,7 +107,7 @@ export default () => {
 					(block, c) => {
 						if (block.reduce(
 							(acc, owner) => acc + (owner === null ? -1 : owner === player), 0
-						) >= 2) towers[player].push([ r, c ])
+						) >= 2) towers[player].push([ r + 1, c + 1 ])
 					})
 				)
 			)
@@ -494,13 +494,17 @@ export default () => {
 						const res = await subs.start.fn(name, uid, true)
 						if (typeof res === 'string') return res // Note: error
 
-						Object.assign(game, res)
+						games[name] = Object.assign(game, res)
 
 						game.record.forEach(place => drawPlace({ ...place, ctx: game.ctx }))
 
+						let reply = `已加载 id 为 ${id} 的记录，游戏开始`
+						if (game.final) reply += '\n对手无子可落，游戏结束\n'
+							+ subs.tower.fn(name, uid)
+
 						return [
 							subs.show.fn(name, uid),
-							`已加载 id 为 ${id} 的记录，游戏开始`
+							reply
 						]
 					}
 				},
