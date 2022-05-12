@@ -56,9 +56,3 @@ export const startREPL = async () => {
 
 	return replServer
 }
-
-if (bot.repls) {
-	bot.repls.close()
-	bot.logger.mark('Restarting REPL.')
-	bot.repls = await startREPL()
-}

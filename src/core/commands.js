@@ -1,11 +1,12 @@
 import { fileURLToPath }	from 'node:url'
 import fs					from 'node:fs/promises'
 import path					from 'node:path'
+import chalk				from 'chalk'
 import shell				from '../util/shell.js'
 
 const suffix = '.will.js'
 
-const helphelp = {
+export const helphelp = {
 	__inited: true,
 	alias: [ 'help' ],
 	args: [],
@@ -15,13 +16,13 @@ const helphelp = {
 
 helphelp.subs['?'] = helphelp.subs.help = helphelp
 
-const _initCmd = (cmd, cmdName) => {
+export const initCmd = (cmd, cmdName) => {
 	if (cmd.__inited) return
 	cmd.__inited = true
 
 	const subs = cmd.subs ??= {}
 	for (const subName in subs) {
-		_initCmd(subs[subName], subName)
+		initCmd(subs[subName], subName)
 	}
 	subs['?'] ??= {
 		alias: [ 'help' ],
@@ -55,19 +56,28 @@ const _loadCmd = async (file) => {
 	const { default: fn, name } = await import(
 		path.resolve(srcPath, 'commands', file + `?date=${Date.now()}`)
 	)
-	const cmdName = name ?? file.slice(0, - suffix.length)
-	_initCmd(bot.cmds.subs[cmdName] = await fn(bot), cmdName)
+	const willName = name ?? file.slice(0, - suffix.length)
+	try {
+		bot.logger.mark(`Loading will ${chalk.cyan(willName)}...`)
+		initCmd(
+			bot.cmds.subs[willName] = await fn(bot),
+			willName
+		)
+	}
+	catch (err) {
+		bot.logger.err(`Failed to load will ${chalk.cyan(willName)}`)(err)
+	}
 }
 
 export const srcPath = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 
-export const loadCmd = async (glob) => await Promise.all(
-	(glob === '*'
+export const loadCmd = async (glob) => {
+	for (const file of glob === '*'
 		? (await fs.readdir(path.resolve(srcPath, 'commands')))
 			.filter(file => file.endsWith(suffix))
 		: Array.isArray(glob) ? glob : [ glob ]
-	).map(_loadCmd)
-)
+	) await _loadCmd(file)
+}
 
 export const findCmd = (cmdName) => {
 	const names = cmdName.split('.')
@@ -132,10 +142,3 @@ export const runCmd = async (msg) => {
 		msg.reply(`${cmdName}: ${err}`)
 	}
 }
-
-bot.cmds = {
-	subs: {},
-	help: `Willbot v${bot.pack.version} β`
-}
-await loadCmd('*')
-_initCmd(bot.cmds, '(root)')

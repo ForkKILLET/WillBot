@@ -5,8 +5,8 @@ import minimist			from 'minimist'
 import { createClient }	from 'oicq'
 import { MongoClient }	from 'mongodb'
 import chalkT			from 'chalk-template'
-import Logger			from '../util/logger.js'
-import { loadAll }		from './loader.js'
+import Logger			from './util/logger.js'
+import { loadAll }		from './core/loader.js'
 
 const startBot = async (logger) => {
 	global.bot = { logger }

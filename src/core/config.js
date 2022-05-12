@@ -69,7 +69,3 @@ export const checkConfig = (config) => {
 	errs = errs.map(([ path, type ]) => `${path} is not of type ${type}`)
 	if (errs.length) throw new AggregateError(errs, 'illegal config')
 }
-
-await getConfig(bot)
-	.catch(bot.logger.err)
-	.then(newCfg => bot.cfg = newCfg)

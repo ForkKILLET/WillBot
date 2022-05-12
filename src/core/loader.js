@@ -1,3 +1,5 @@
+import chalk from 'chalk'
+
 export const modules = {
 	loader: {
 		path: './loader.js'
@@ -7,13 +9,31 @@ export const modules = {
 		assert: { type: 'json' }
 	},
 	config: {
-		path: './config.js'
+		path: './config.js',
+		callback: async () => await bot.config.getConfig(bot)
+			.catch(bot.logger.err)
+			.then(newCfg => bot.cfg = newCfg)
 	},
 	repl: {
-		path: './repl.js'
+		path: './repl.js',
+		callback: async () => {
+			if (bot.repls) {
+				bot.repls.close()
+				bot.logger.mark('Restarting REPL.')
+				bot.repls = await bot.repl.startREPL()
+			}
+		}
 	},
 	command: {
-		path: './commands.js'
+		path: './commands.js',
+		callback: async () => {
+			bot.cmds = {
+				subs: {},
+				help: `Willbot v${bot.pack.default.version} β`
+			}
+			await bot.command.loadCmd('*')
+			bot.command.initCmd(bot.cmds, '(root)')
+		}
 	}
 }
 
@@ -24,10 +44,11 @@ export const loadAll = async () => {
 }
 
 export const load = async (name) => {
-	bot.logger.mark(`Loading module ${name}`)
+	bot.logger.mark(`Loading module ${chalk.yellow(name)}...`)
 	const module = modules[name]
-	if (! module) throw `module ${name}: not found`
+	if (! module) throw `module ${chalk.yellow(name)}: not found`
 	else {
 		bot[name] = await import(`${module.path}?date=${Date.now()}`, { assert: module.assert })
+		await module.callback?.()
 	}
 }
