@@ -2,6 +2,7 @@ import { fileURLToPath }	from 'node:url'
 import fs					from 'node:fs/promises'
 import path					from 'node:path'
 import chalk				from 'chalk'
+import minimist				from 'minimist'
 import shell				from '../util/shell.js'
 
 const suffix = '.will.js'
@@ -58,7 +59,7 @@ const _loadCmd = async (file) => {
 	)
 	const willName = name ?? file.slice(0, - suffix.length)
 	try {
-		bot.logger.mark(`Loading will ${chalk.cyan(willName)}...`)
+		bot.logger.info(`Loading will ${chalk.cyan(willName)}...`)
 		initCmd(
 			bot.cmds.subs[willName] = await fn(bot),
 			willName
@@ -90,8 +91,21 @@ export const findCmd = (cmdName) => {
 }
 
 export const runCmd = async (msg) => {
-	const [ tokens, flags ] = shell(msg.raw_message, {})
-	const [ cmdName, ...args ] = tokens
+	let raw = msg.raw_message.trimStart()
+	const uid = msg.sender.user_id
+	bot.logger.info('Running by %d: %s', uid, raw)
+
+	const custom = await bot.mongo.db
+		.collection('custom')
+		.findOne({ _id: uid })
+	if (custom?.alias) {
+		raw = raw.replace(/^[\w-]+(?=\s|$|\.)/, firstWord => {
+			return custom.alias[firstWord] ?? firstWord
+		})
+	}
+
+	const [ tokens, flags ] = shell(raw, {})
+	const { _: [ cmdName, ...args ], ...named } = minimist(tokens)
 
 	try {
 		const cmd = findCmd(cmdName)
@@ -99,12 +113,12 @@ export const runCmd = async (msg) => {
 		if (! cmd.fn) throw 'not executable'
 
 		const cookedArgs = cmd.args.map(rule => {
-			let argErr = `arg <${rule.ty}>: `
+			let argErr = `arg <${rule.name}: ${rule.ty}>: `
 			switch (rule.ty) {
 			case '$msg':
 				return msg
 			case '$uid':
-				return msg.sender.user_id
+				return uid
 			case '$flags':
 				return flags
 			case '$tokens':
@@ -113,12 +127,25 @@ export const runCmd = async (msg) => {
 				return args.splice(0).join(' ')
 			case 'str':
 			case 'num': {
-				let arg = args.shift()
-				if (arg === undefined && ! rule.opt) throw 'too few args'
+				let arg
+				if (rule.name in named) {
+					arg = named[rule.name]
+					delete named[rule.name]
+				}
+				else {
+					arg = args.shift()
+					if (arg === undefined) {
+						if (! rule.opt) throw 'too few args'
+						return undefined
+					}
+				}
 				if (rule.ty === 'num') {
-					arg = + arg
+					arg = Number(arg)
 					if (isNaN(arg)) throw argErr + 'not a number'
 					if (rule.int && (arg | 0) !== arg) throw argErr + 'not an integer'
+				}
+				if (rule.ty === 'str') {
+					arg = String(arg)
 				}
 				return arg
 			}
@@ -126,6 +153,9 @@ export const runCmd = async (msg) => {
 				throw `${rule.ty}: unknown arg type (internal error)`
 			}
 		})
+
+		const rest = Object.keys(named)
+		if (rest.length) throw rest.join(', ') + ': unknown named arg'
 
 		if (args.length) throw 'too many args'
 

@@ -5,7 +5,7 @@ export default (() => ({
 		const result = []
 		const find = (cmd, path) => {
 			for (const subName in cmd.subs) {
-				if (subName === name) result.push(path.slice(1) + '.' + subName)
+				if (subName === name) result.push((path + '.' + subName).slice(1))
 				const sub = cmd.subs[subName]
 				if (! sub || sub === bot.command.helphelp) continue
 				find(sub, path + '.' + subName)

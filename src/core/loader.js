@@ -44,7 +44,7 @@ export const loadAll = async () => {
 }
 
 export const load = async (name) => {
-	bot.logger.mark(`Loading module ${chalk.yellow(name)}...`)
+	bot.logger.info(`Loading module ${chalk.yellow(name)}...`)
 	const module = modules[name]
 	if (! module) throw `module ${chalk.yellow(name)}: not found`
 	else {

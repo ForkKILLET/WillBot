@@ -3,7 +3,6 @@ import fs			from 'node:fs/promises'
 import chalk		from 'chalk'
 import { showErr }	from './error.js'
 
-let _lv = 1
 const logLvs = [ 'trace', 'debug', 'info', 'warn', 'error', 'fatal', 'mark' ]
 const lvColors = [ 'cyanBright', 'cyanBright', 'blueBright', 'yellow', 'red', 'magenta', 'whiteBright' ]
 
@@ -24,25 +23,25 @@ export default class Logger {
 			const f = (...p) => {
 				const s = format(...p)
 				if (opt.stdout !== false) console[logFns[lv]](s)
-				if (opt.logFile) fs.appendFile(opt.logFile, s + '\n')
+				if (opt.file) fs.appendFile(opt.file, s + '\n')
 			}
 
 			const timePrefix = `[${ chalk.grey(new Date().toJSON()) }] `
 			const lvPrefix = `[${ chalk[lvColors[i]](lv.toUpperCase()) }] `
 
 			this[lv] = (s, ...p) => {
-				if (_lv <= i) f(timePrefix + (opt.prefix ?? '') + lvPrefix + s, ...p)
+				if (opt._lv <= i) f(timePrefix + (opt.prefix ?? '') + lvPrefix + s, ...p)
 			}
 		}
 
 		this.err = showErr(this.error)
 	}
 
-	static get lv() {
-		return logLvs[_lv]
+	get lv() {
+		return logLvs[this.opt._lv]
 	}
-	static set lv(value) {
+	set lv(value) {
 		const i = logLvs.indexOf(value)
-		_lv = i
+		this.opt._lv = i
 	}
 }

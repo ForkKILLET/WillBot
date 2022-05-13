@@ -24,8 +24,10 @@ const startBot = async (logger) => {
 
 	await loadAll()
 
-	logger.opt.logFile = bot.cfg.log.file
-	Logger.lv = bot.cfg.log.level ?? 'warn'
+	const { file, stdout } = bot.cfg.log
+	logger.opt.file = file
+	logger.opt.stdout = stdout
+	logger.lv = bot.cfg.log.level ?? 'warn'
 
 	const { addr, port, name } = bot.cfg.database
 	const uri = encodeURI(`mongodb://${addr}:${port}`)
@@ -50,8 +52,9 @@ const startBot = async (logger) => {
 		bot.oicq = oicq
 		oicq.logger = new Logger({
 			prefix: chalkT`[{yellow OICQ}] `,
-			logFile: bot.cfg.log.file
+			file, stdout
 		})
+		oicq.logger.lv = 'warn'
 		await oicq.login(pw)
 
 		await new Promise(res => bot.oicq.on('system.online', res))
@@ -78,9 +81,10 @@ const main = async () => {
 	})
 	await startBot(logger).catch(logger.err('Failed to start bot:', 1))
 
-	process.on('exit', (code) => {
-		bot.logger.mark(`Exit with status code ${code}`)
-	})
+	process
+		.on('exit', (code) => bot.logger.mark(`Exit with status code ${code}`))
+		.on('unhandledRejection', (err, promise) => bot.logger.fatal('Uncaught rejection %o at promise %o', err, promise))
+		.on('uncaughtException', err => bot.logger.fatal('Uncaught exception %o', err))
 }
 
 main()

@@ -200,7 +200,7 @@ export default () => {
 							[ 0, 1 ].map(player => `${colorNames[player]}：${game.players[player] || '暂无'}`).join('\n') + '\n' +
 							`游戏时长：${dayjs(game.startTime).fromNow(true)}\n` +
 							`回合数：${game.round}` +
-							(game.final ? '\n对手无子可落，游戏结束\n' + subs.tower.fn(name, uid) : '')
+							(game.final ? game.finalReply : '')
 						]
 					}
 				},
@@ -290,6 +290,25 @@ export default () => {
 				return reply
 			}
 		},
+		kick: {
+			args: [ { ty: '$uid' } ],
+			help: '踢出当前房间的玩家',
+			fn: (uid) => {
+				const name = players[uid]
+				if (! name) return '您不在游戏中'
+
+				const game = games[name]
+				if (game.players[0] !== uid) return `您不是游戏 ${name} 的发起者`
+
+				const u2id = game.players[1]
+				if (u2id) {
+					game.players.pop()
+					delete players[u2id]
+					return `已踢出玩家 ${u2id}`
+				}
+				else return `游戏 ${name} 没有第二位玩家`
+			}
+		},
 		end: {
 			args: [ { ty: '$uid' } ],
 			help: '结束您发起的游戏',
@@ -312,16 +331,44 @@ export default () => {
 				return reply
 			}
 		},
-		me: {
-			args: [ { ty: '$uid' } ],
-			help: '查看您的游戏信息',
-			fn: (uid) => {
-				const name = players[uid]
-				if (! name) return '您不在游戏中'
+		player: {
+			args: [
+				{ ty: 'num', name: 'uid', opt: true },
+				{ ty: '$msg' }
+			],
+			help: '查看玩家信息，默认为您的',
+			fn: async (uid, msg) => {
+				uid ??= msg.sender.user_id
 
-				const game = games[name]
-				const player = game.players.indexOf(uid)
-				return `当前游戏：${name}，角色：${colorNames[player]}`
+				let reply = uid.toString()
+				if (msg.message_type === 'group') {
+					const userInfo = (await bot.oicq.getGroupMemberList(msg.group_id)).get(uid)
+					if (userInfo) {
+						reply += `（群内身份 ${userInfo.card || userInfo.nickname}）`
+					}
+				}
+				reply += '\n'
+
+				const name = players[uid]
+				if (! name) reply += '当前不在游戏中'
+
+				else {
+					const game = games[name]
+					const player = game.players.indexOf(uid)
+					reply += `当前游戏：${name}，角色：${colorNames[player]}`
+				}
+
+				const playerInfo = await bot.mongo.db
+					.collection('pyrga_players')
+					.findOne({ _id: uid })
+				if (! playerInfo) reply += '\n暂无游戏数据'
+				else {
+					const { win = 0, lose = 0, tie = 0 } = playerInfo
+					const all = win + lose + tie
+					reply += `\n胜：${win}，负：${lose}，平：${tie}\n总：${all}，胜率：${ (win / all * 100).toFixed(2) }%`
+				}
+
+				return reply
 			}
 		},
 		tower: {
@@ -337,9 +384,10 @@ export default () => {
 				}
 
 				const game = games[name]
-				const towers = calcTowers(game)
+				const towers = game.towers ??= calcTowers(game)
 
 				const [ t0, t1 ] = towers.map(t => t.length)
+				towers.t0 = t0, towers.t1 = t1
 
 				return `${colorNames[0]}和${colorNames[1]}有 ${t0} ${ t0 < t1 ? '<' : t0 > t1 ? '>' : '=' } ${t1} 座塔\n`
 					+ towers.map(
@@ -348,6 +396,7 @@ export default () => {
 			}
 		},
 		place: {
+			alias: [ 'p' ],
 			args: [
 				{ ty: 'num', name: 'row', int: true },
 				{ ty: 'num', name: 'col', int: true },
@@ -358,7 +407,7 @@ export default () => {
 				+ '<row>, <col>：应为 1 ~ 4 的整数\n'
 				+ '<chess-type>：\n'
 				+ 'c[ircle], s[quare], a[rrow]{l[eft],r[ight],u[p],d[own]}',
-			fn: (row, col, type, uid) => {
+			fn: async (row, col, type, uid) => {
 				const name = players[uid]
 				if (! name) return '您不在游戏中'
 
@@ -452,8 +501,41 @@ export default () => {
 						)
 					) || game.pieces[player ^ 1].every(x => x === 0)) {
 						game.final = true
-						reply += '\n对手无子可落，游戏结束\n'
-							+ subs.tower.fn(name, uid)
+						let finalReply = '对手无子可落，游戏结束\n' + subs.tower.fn(name, uid)
+
+						const { t0, t1 } = game.towers
+						let s0, s1
+
+						if (t0 === t1) {
+							finalReply += '\n平局！'
+							s0 = s1 = 'tie'
+						}
+						else {
+							const winner = + (t0 < t1)
+							finalReply += `\n${colorNames[winner]} ${game.players[winner]} 胜！`
+							s0 = winner ? 'lose' : 'win'
+							s1 = winner ? 'win' : 'lose'
+						}
+
+						try {
+							const col = await bot.mongo.db.collection('pyrga_players')
+							await col.updateOne(
+								{ _id: game.players[0] },
+								{ $inc: { [s0]: 1 } },
+								{ upsert: true }
+							)
+							await col.updateOne(
+								{ _id: game.players[1] },
+								{ $inc: { [s1]: 1 } },
+								{ upsert: true }
+							)
+						}
+						catch (err) {
+							game.reply += '\n更新玩家信息异常'
+						}
+
+						game.finalReply = finalReply
+						reply += '\n' + finalReply
 					}
 				} 
 
@@ -481,7 +563,7 @@ export default () => {
 						game = cloneJSON(game)
 
 						await bot.mongo.db
-							.collection('pyrga')
+							.collection('pyrga_records')
 							.insertOne(game)
 
 						return `已保存为 ${game._id}`
@@ -496,7 +578,7 @@ export default () => {
 					help: '加载 id 为 <id> 的记录到新游戏 <name> 中',
 					fn: async (id, name, uid) => {
 						const game = await bot.mongo.db
-							.collection('pyrga')
+							.collection('pyrga_records')
 							.findOne({ _id: id })
 
 						if (! game) return `不存在 id 为 ${id} 的记录`
@@ -509,8 +591,7 @@ export default () => {
 						game.record.forEach(place => drawPlace({ ...place, ctx: game.ctx }))
 
 						let reply = `已加载 id 为 ${id} 的记录，游戏开始`
-						if (game.final) reply += '\n对手无子可落，游戏结束\n'
-							+ subs.tower.fn(name, uid)
+						if (game.final) reply += '\n' + game.finalReply
 
 						return [
 							subs.show.fn(name, uid),
@@ -523,10 +604,10 @@ export default () => {
 						{ ty: 'str', name: 'id' },
 						{ ty: 'num', name: 'delay', opt: true }
 					],
-					help: '或许 id 为 <id> 的记录的回放 gif 动图，每帧延迟 [delay] 毫秒，默认 800',
+					help: '获取 id 为 <id> 的记录的回放 gif 动图，每帧延迟 [delay] 毫秒，默认 800',
 					fn: async (id, delay) => {
 						const game = await bot.mongo.db
-							.collection('pyrga')
+							.collection('pyrga_records')
 							.findOne({ _id: id })
 
 						if (! game) return `不存在 id 为 ${id} 的记录`
@@ -553,7 +634,7 @@ export default () => {
 					help: '列出所有保存的记录 id，可用 [name] 指定游戏名称',
 					fn: async (name) => {
 						const ids = await bot.mongo.db
-							.collection('pyrga')
+							.collection('pyrga_records')
 							.find(name
 								? {
 									$where () {
@@ -573,14 +654,14 @@ export default () => {
 					help: '删除 id 为 <id> 的记录',
 					fn: async (id, uid) => {
 						const game = await bot.mongo.db
-							.collection('pyrga')
+							.collection('pyrga_records')
 							.findOne({ _id: id })
 
 						if (! game) return `不存在 id 为 ${id} 的记录`
 						if (! game.players.includes(uid)) return '您不是记录中的玩家，不能删除该记录'
 
 						await bot.mongo.db
-							.collection('pyrga')
+							.collection('pyrga_records')
 							.deleteOne({ _id: id })
 
 						return `id 为 ${id} 的记录已删除`
