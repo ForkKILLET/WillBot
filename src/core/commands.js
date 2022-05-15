@@ -99,7 +99,7 @@ export const findCmd = (cmdName) => {
 }
 
 export const runCmd = async (msg) => {
-	let raw = msg.raw_message.trimStart()
+	let raw = msg.raw_message.trimStart() || '?'
 	const uid = msg.sender.user_id
 	bot.logger.info('Running by %d: %s', uid, raw)
 
