@@ -239,8 +239,6 @@ export default () => {
 					)
 				})
 
-				drawInit({  })
-
 				return customInit ? game : [
 					subs.show.fn(name),
 					'游戏开始'
@@ -384,7 +382,9 @@ export default () => {
 				}
 
 				const game = games[name]
-				const towers = game.towers ??= calcTowers(game)
+				const towers = game.towers = calcTowers(game)
+
+				console.log(towers)
 
 				const [ t0, t1 ] = towers.map(t => t.length)
 				towers.t0 = t0, towers.t1 = t1

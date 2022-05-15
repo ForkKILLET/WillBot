@@ -21,6 +21,14 @@ export const initCmd = (cmd, cmdName) => {
 	if (cmd.__inited) return
 	cmd.__inited = true
 
+	const parseStrArg = ([ name, ty, ...rest ]) => ({
+		ty, name,
+		...Object.fromEntries(rest.map(k => [ k, true ]))
+	})
+	cmd.args = cmd.args?.map(arg => typeof arg === 'string'
+		? parseStrArg(arg.split(':'))
+		: arg)
+
 	const subs = cmd.subs ??= {}
 	for (const subName in subs) {
 		initCmd(subs[subName], subName)
@@ -123,9 +131,12 @@ export const runCmd = async (msg) => {
 				return flags
 			case '$tokens':
 				return tokens
+			case '$self':
+				return cmd
 			case 'text':
 				return args.splice(0).join(' ')
 			case 'str':
+			case 'bool':
 			case 'num': {
 				let arg
 				if (rule.name in named) {
@@ -143,6 +154,11 @@ export const runCmd = async (msg) => {
 					arg = Number(arg)
 					if (isNaN(arg)) throw argErr + 'not a number'
 					if (rule.int && (arg | 0) !== arg) throw argErr + 'not an integer'
+				}
+				if (rule.ty === 'bool') {
+					if (`${arg}` === 'true') arg = true
+					else if (`${arg}` === 'false') arg = false
+					else throw 'not a boolean (true or false)'
 				}
 				if (rule.ty === 'str') {
 					arg = String(arg)
