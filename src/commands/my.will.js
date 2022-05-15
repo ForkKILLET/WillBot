@@ -5,7 +5,7 @@ export default (() => ({
 			help: 'Add an alias',
 			args: [
 				{ ty: 'str', name: 'alias' },
-				{ ty: 'str', name: 'command' },
+				{ ty: 'text', name: 'command' },
 				{ ty: '$uid' }
 			],
 			fn: async (alias, cmd, uid) => {
