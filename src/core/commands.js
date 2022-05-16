@@ -41,10 +41,12 @@ export const initCmd = (cmd, cmdName) => {
 			+ `subs: ${Object.keys(subs).join(', ') || 'none'}\n`
 			+ (cmd.args
 				? `usage: ${cmdName} ${
-					cmd.args.map(({ ty, name, opt }) => ty[0] === '$'
-						? ''
-						: (opt ? `[${name}: ${ty}]` : `<${name}: ${ty}>`)
-					).filter(s => s).join(' ')
+					cmd.args.map(({ ty, name, opt, named }) => {
+						if (ty[0] === '$')	return ''
+						if (named)			return `--${name}: ${ty}`
+						if (opt)			return `[${name}: ${ty}]`
+						if (named)			return `<${name}: ${ty}>`
+					}).filter(s => s).join(' ')
 				}\n`
 				: 'no usage\n'
 			)
@@ -103,21 +105,25 @@ export const runCmd = async (msg) => {
 	const uid = msg.sender.user_id
 	bot.logger.info('Running by %d: %s', uid, raw)
 
-	const custom = await bot.mongo.db
-		.collection('custom')
-		.findOne({ _id: uid })
-	if (custom?.alias) {
-		raw = raw.replace(/^[\w-]+(?=\s|$|\.)/, firstWord => {
-			return custom.alias[firstWord] ?? firstWord
-		})
-	}
-
 	const [ tokens, flags ] = shell(raw, {})
 	const { _: [ cmdName, ...args ], ...named } = minimist(tokens)
 
+	const [ head, ...tail ] = cmdName.split('.')
+	const alias = await bot.mongo.db.collection('my_alias').findOne({ uid, alias: head })
+	const cookedCmdName = [ alias ? alias.command : head, ...tail ].join('.')
+
 	try {
-		const cmd = findCmd(cmdName)
-		if (! cmd) throw 'not found'
+		let cmd = findCmd(cookedCmdName)
+		if (! cmd) {
+			const withCmds = (await bot.mongo.db
+				.collection('my_with')
+				.findOne({ _id: uid }))
+				?.commands
+			if (withCmds) for (const c of withCmds) {
+				if (cmd = findCmd(c + '.' + cookedCmdName)) break
+			}
+			if (! cmd) throw 'not found'
+		}
 		if (! cmd.fn) throw 'not executable'
 
 		const cookedArgs = cmd.args.map(rule => {
@@ -141,13 +147,15 @@ export const runCmd = async (msg) => {
 				let arg
 				if (rule.name in named) {
 					arg = named[rule.name]
+					if (arg && rule.named === false) throw `${rule.name}: forbidden named arg`
 					delete named[rule.name]
 				}
 				else {
+					if (rule.named) return
 					arg = args.shift()
 					if (arg === undefined) {
 						if (! rule.opt) throw 'too few args'
-						return undefined
+						return
 					}
 				}
 				if (rule.ty === 'num') {
@@ -180,11 +188,11 @@ export const runCmd = async (msg) => {
 			if (reply != null) await msg.reply(reply)
 		}
 		catch (err) {
-			bot.logger.err(`Caught internal error in ${cmdName}`)(err)
+			bot.logger.err(`Caught internal error in ${cookedCmdName}`)(err)
 			throw (err?.message ?? err) + ' (internal error)'
 		}
 	}
 	catch (err) {
-		msg.reply(`${cmdName}: ${err}`)
+		msg.reply(`${cookedCmdName}: ${err}`)
 	}
 }

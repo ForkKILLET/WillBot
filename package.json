@@ -1,6 +1,6 @@
 {
   "name": "willbot-beta-workspace",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "main": "src/core/index.js",
   "repository": "git@github.com:ForkKILLET/WillBot.git",
   "author": "ForkΨKILLET <fork_killet@qq.com>",
@@ -20,6 +20,7 @@
     "mkfifo": "^2.1.0",
     "mongodb": "^4.5.0",
     "oicq": "^2.2.2",
+    "pretty-format": "^28.1.0",
     "puppeteer": "^14.0.0"
   },
   "devDependencies": {
