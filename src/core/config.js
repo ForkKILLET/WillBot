@@ -32,7 +32,8 @@ export const configRule = {
 		}
 	},
 	commands: {
-		prompts: [ 'string' ]
+		prompts: [ 'string' ],
+		'error-prefix': 'string?'
 	},
 }
 

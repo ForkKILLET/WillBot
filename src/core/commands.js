@@ -100,13 +100,27 @@ export const findCmd = (cmdName) => {
 	return now
 }
 
+export class CmdError extends Error {
+	constructor(msg, doLog) {
+		super(msg)
+		if (doLog) bot.logger.err('Handled internal error')(msg)
+	}
+}
+
 export const runCmd = async (msg) => {
 	let raw = msg.raw_message.trimStart() || '?'
 	const uid = msg.sender.user_id
 	bot.logger.info('Running by %d: %s', uid, raw)
 
+	msg.reply.err = err => {
+		msg.reply((bot.cfg.commands['error-prefix'] ?? '') + err)
+	}
+
 	const [ tokens, flags ] = shell(raw, {})
 	const { _: [ cmdName, ...args ], ...named } = minimist(tokens)
+
+	if (flags.dq) return msg.reply.err('unmatched "')
+	if (flags.sq) return msg.reply.err('unmatched \'')
 
 	const [ head, ...tail ] = cmdName.split('.')
 	const alias = await bot.mongo.db.collection('my_alias').findOne({ uid, alias: head })
@@ -126,8 +140,8 @@ export const runCmd = async (msg) => {
 		}
 		if (! cmd.fn) throw 'not executable'
 
-		const cookedArgs = cmd.args.map(rule => {
-			let argErr = `arg <${rule.name}: ${rule.ty}>: `
+		const cookedArgs = cmd.args.map((rule) => {
+			const argErr = `arg (${rule.name}: ${rule.ty}): `
 			switch (rule.ty) {
 			case '$msg':
 				return msg
@@ -166,7 +180,7 @@ export const runCmd = async (msg) => {
 				if (rule.ty === 'bool') {
 					if (`${arg}` === 'true') arg = true
 					else if (`${arg}` === 'false') arg = false
-					else throw 'not a boolean (true or false)'
+					else throw argErr + 'not a boolean (true or false)'
 				}
 				if (rule.ty === 'str') {
 					arg = String(arg)
@@ -185,7 +199,10 @@ export const runCmd = async (msg) => {
 
 		try {
 			const reply = await cmd.fn(...cookedArgs)
-			if (reply != null) await msg.reply(reply)
+			console.log(reply, reply instanceof CmdError)
+			if (typeof reply === 'string') msg.reply(reply)
+			else if (reply instanceof CmdError) msg.reply.err(reply.message)
+			else throw 'Reply is not a string'
 		}
 		catch (err) {
 			bot.logger.err(`Caught internal error in ${cookedCmdName}`)(err)
@@ -193,6 +210,6 @@ export const runCmd = async (msg) => {
 		}
 	}
 	catch (err) {
-		msg.reply(`${cookedCmdName}: ${err}`)
+		msg.reply.err(`${cookedCmdName}: ${err}`)
 	}
 }

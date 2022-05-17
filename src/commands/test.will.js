@@ -6,8 +6,14 @@ export default () => ({
 		echo: {
 			alias: [ 'say' ],
 			help: 'send <sentence> in the current context',
-			args: [ { name: 'sentence', ty: 'text' } ],
-			fn: (sen) => sen || '(empty message)'
+			args: [
+				{ name: 'error', ty: 'bool', named: true },
+				{ name: 'sentence', ty: 'text' }
+			],
+			fn: (error, sen) => {
+				sen ||= '(empty message)'
+				return error ? new bot.command.CmdError(sen) : sen
+			}
 		},
 
 		eval: {
@@ -26,7 +32,7 @@ export default () => ({
 					return format(res)
 				}
 				catch (err) {
-					return format(err)
+					return new bot.command.CmdError(format(err))
 				}
 			}
 		}
