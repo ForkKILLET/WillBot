@@ -1,27 +1,27 @@
 import { format }	from 'pretty-format'
 import vm			from 'vm'
 
-export default () => ({
+export default ({ command: { CmdError } }) => ({
 	subs: {
 		echo: {
 			alias: [ 'say' ],
-			help: 'send <sentence> in the current context',
+			help: 'Send <sentence> in the current context. Send error with --error on.',
 			args: [
-				{ name: 'error', ty: 'bool', named: true },
-				{ name: 'sentence', ty: 'text' }
+				{ ty: 'bool', name: 'error', named: true },
+				{ ty: 'text', name: 'sentence' }
 			],
 			fn: (error, sen) => {
 				sen ||= '(empty message)'
-				return error ? new bot.command.CmdError(sen) : sen
+				return error ? new CmdError(sen) : sen
 			}
 		},
 
 		eval: {
 			alias: [ '~' ],
-			help: 'evaluate JavaScript <code>',
+			help: 'Evaluate JavaScript <code>',
 			args: [
-				{ name: 'globals', ty: 'str', named: true },
-				{ name: 'code', ty: 'text' }
+				{ ty: 'str', name: 'globals', named: true },
+				{ ty: 'text', name: 'code' }
 			],
 			fn: async (globals, code) => {
 				try {
@@ -32,9 +32,21 @@ export default () => ({
 					return format(res)
 				}
 				catch (err) {
-					return new bot.command.CmdError(format(err))
+					return new CmdError(format(err))
 				}
 			}
+		},
+
+		tokenize: {
+			help: 'Show tokens and flags of <input>.',
+			args: [
+				{ ty: '$tokens' },
+				{ ty: '$flags' },
+				{ ty: 'text', name: 'input' }
+			],
+			fn: (tokens, flags, input) => (
+				`input: ${input}\ntokens: ${format(tokens)}\nflags: ${format(flags)}`
+			)
 		}
 	}
 })

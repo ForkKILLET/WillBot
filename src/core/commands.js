@@ -116,7 +116,12 @@ export const runCmd = async (msg) => {
 		msg.reply((bot.cfg.commands['error-prefix'] ?? '') + err)
 	}
 
-	const [ tokens, flags ] = shell(raw, {})
+	const env = bot.userEnv[uid] ??= (await bot.mongo.db
+		.collection('my_env')
+		.findOne({ _id: uid }))
+		?.env ?? {}
+
+	const [ tokens, flags ] = shell(raw, env)
 	const { _: [ cmdName, ...args ], ...named } = minimist(tokens)
 
 	if (flags.dq) return msg.reply.err('unmatched "')
@@ -199,7 +204,6 @@ export const runCmd = async (msg) => {
 
 		try {
 			const reply = await cmd.fn(...cookedArgs)
-			console.log(reply, reply instanceof CmdError)
 			if (typeof reply === 'string') msg.reply(reply)
 			else if (reply instanceof CmdError) msg.reply.err(reply.message)
 			else throw 'Reply is not a string'

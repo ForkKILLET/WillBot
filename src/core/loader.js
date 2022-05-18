@@ -33,6 +33,7 @@ export const modules = {
 			}
 			await bot.command.loadCmd('*')
 			bot.command.initCmd(bot.cmds, '(root)')
+			bot.userEnv = {}
 		}
 	}
 }

@@ -22,7 +22,9 @@ export default (ln, vars) => {
 		wh: true,
 	}
 	const e = () => {
-		now += String.fromCharCode(parseInt(enow, f.cesc === 'o' ? 8 : 16))
+		const es = String.fromCharCode(parseInt(enow, f.cesc === 'o' ? 8 : 16))
+		if (f.var) vnow += es
+		else now += es
 		f.cesc = false
 		enow = ''
 	}
@@ -36,14 +38,6 @@ export default (ln, vars) => {
 			f.esc = false
 			continue
 		}
-		if (white.test(ch) && ! f.sq && ! f.dq) {
-			if (f.wh) continue
-			tokens.push(now)
-			now = ''
-			f.wh = true
-			continue
-		}
-		else f.wh = false
 		if (f.cesc) {
 			if (enow.length < (f.cesc === 'u' ? 4 : 2)) {
 				if ((f.cesc === 'o' ? d8 : d16).test(ch)) {
@@ -59,7 +53,7 @@ export default (ln, vars) => {
 			}
 			else e()
 		}
-		else if (f.var) {
+		if (f.var) {
 			if (! vnow.length && ! ident.test(ch) || vnow.length && ! identd.test(ch)) {
 				now += vars[vnow] ?? ''
 				f.var = false
@@ -70,11 +64,19 @@ export default (ln, vars) => {
 				continue
 			}
 		}
+		if (white.test(ch) && ! f.sq && ! f.dq) {
+			if (f.wh) continue
+			tokens.push(now)
+			now = ''
+			f.wh = true
+			continue
+		}
+		else f.wh = false
 		if (ch === '\\') f.esc = true
 		else if (ch === '\'' && ! f.dq) f.sq = ! f.sq
 		else if (ch === '"' && ! f.sq) f.dq = ! f.dq
 		// else if (! f.dq && ! f.sq && ch === '~') now += '/home'
-		else if (! f.sq && ch === '$') f.var = true
+		else if (ch === '$' && ! f.sq) f.var = true
 		else now += ch
 	}
 	if (now) tokens.push(now.slice(0, -1))
