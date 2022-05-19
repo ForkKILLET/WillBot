@@ -25,7 +25,10 @@ export const configRule = {
 		name: 'string?'
 	},
 	repl: {
-		prompt: 'string?',
+		prompt: {
+			eval: 'string?',
+			command: 'string?'
+		},
 		'new-session': {
 			cmd: 'string?',
 			args: [ 'string?' ]

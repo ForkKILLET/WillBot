@@ -18,7 +18,8 @@ export const modules = {
 		path: './repl.js',
 		callback: async () => {
 			if (bot.repls) {
-				bot.repls.close()
+				bot.repls.restart = true
+				await bot.repls.close()
 				bot.logger.mark('Restarting REPL.')
 				bot.repls = await bot.repl.startREPL()
 			}

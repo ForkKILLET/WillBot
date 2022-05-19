@@ -1,5 +1,6 @@
 #!/bin/env node
 
+import './util/silent-experimental-warning.js'
 import path				from 'node:path'
 import minimist			from 'minimist'
 import { createClient }	from 'oicq'
@@ -84,7 +85,7 @@ const main = async () => {
 	process
 		.on('exit', (code) => bot.logger.mark(`Exit with status code ${code}`))
 		.on('unhandledRejection', (err, promise) => bot.logger.fatal('Uncaught rejection %o at promise %o', err, promise))
-		.on('uncaughtException', err => bot.logger.fatal('Uncaught exception %o', err))
+		.on('uncaughtException', (err) => bot.logger.fatal('Uncaught exception %o', err))
 }
 
 main()

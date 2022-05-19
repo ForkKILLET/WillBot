@@ -91,13 +91,28 @@ export const loadCmd = async (glob) => {
 }
 
 export const findCmd = (cmdName) => {
-	const names = cmdName.split('.')
 	let now = bot.cmds
+	if (! cmdName) return now
+	const names = cmdName.split('.')
 	for (const name of names) {
 		now = now.subs[name]
 		if (! now) return null
 	}
 	return now
+}
+
+export const findCmdWith = async (cmdName, uid) => {
+	let cmd = findCmd(cmdName)
+	if (! cmd) {
+		const withCmds = (await bot.mongo.db
+			.collection('my_with')
+			.findOne({ _id: uid }))
+			?.commands
+		if (withCmds) for (const c of withCmds) {
+			if (cmd = findCmd(c + '.' + cmdName)) break
+		}
+	}
+	return cmd
 }
 
 export class CmdError extends Error {
@@ -122,7 +137,8 @@ export const runCmd = async (msg) => {
 		?.env ?? {}
 
 	const [ tokens, flags ] = shell(raw, env)
-	const { _: [ cmdName, ...args ], ...named } = minimist(tokens)
+	const [ cmdName, ...args ] = tokens
+	const { _: miniArgs, ...named } = minimist(args)
 
 	if (flags.dq) return msg.reply.err('unmatched "')
 	if (flags.sq) return msg.reply.err('unmatched \'')
@@ -132,17 +148,8 @@ export const runCmd = async (msg) => {
 	const cookedCmdName = [ alias ? alias.command : head, ...tail ].join('.')
 
 	try {
-		let cmd = findCmd(cookedCmdName)
-		if (! cmd) {
-			const withCmds = (await bot.mongo.db
-				.collection('my_with')
-				.findOne({ _id: uid }))
-				?.commands
-			if (withCmds) for (const c of withCmds) {
-				if (cmd = findCmd(c + '.' + cookedCmdName)) break
-			}
-			if (! cmd) throw 'not found'
-		}
+		const cmd = await findCmdWith(cookedCmdName, uid)
+		if (! cmd) throw 'not found'
 		if (! cmd.fn) throw 'not executable'
 
 		const cookedArgs = cmd.args.map((rule) => {
@@ -159,7 +166,7 @@ export const runCmd = async (msg) => {
 			case '$self':
 				return cmd
 			case 'text':
-				return args.splice(0).join(' ')
+				return miniArgs.splice(0).join(' ')
 			case 'str':
 			case 'bool':
 			case 'num': {
@@ -171,7 +178,7 @@ export const runCmd = async (msg) => {
 				}
 				else {
 					if (rule.named) return
-					arg = args.shift()
+					arg = miniArgs.shift()
 					if (arg === undefined) {
 						if (! rule.opt) throw 'too few args'
 						return
@@ -200,13 +207,13 @@ export const runCmd = async (msg) => {
 		const rest = Object.keys(named)
 		if (rest.length) throw rest.join(', ') + ': unknown named arg'
 
-		if (args.length) throw 'too many args'
+		if (miniArgs.length) throw 'too many args'
 
 		try {
 			const reply = await cmd.fn(...cookedArgs)
-			if (typeof reply === 'string') msg.reply(reply)
-			else if (reply instanceof CmdError) msg.reply.err(reply.message)
-			else throw 'Reply is not a string'
+			if (reply instanceof CmdError) msg.reply.err(reply.message)
+			else if (reply) msg.reply(reply)
+			else throw 'Empty reply'
 		}
 		catch (err) {
 			bot.logger.err(`Caught internal error in ${cookedCmdName}`)(err)
