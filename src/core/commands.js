@@ -37,20 +37,24 @@ export const initCmd = (cmd, cmdName) => {
 		alias: [ 'help' ],
 		args: [],
 		fn: () => `${cmdName}: `
-			+ (cmd.alias?.length ? `alias: ${cmd.alias.join(', ')}\n` : '')
-			+ `subs: ${Object.keys(subs).join(', ') || 'none'}\n`
+			+ `[perm] ${cmd.perm ??= 0}`
+			+ (cmd.alias?.length ? `, [alias] ${cmd.alias.join(', ')}` : '')
+			+ `\n[subs] ${Object.keys(subs).join(', ') || 'none'}\n`
 			+ (cmd.args
-				? `usage: ${cmdName} ${
-					cmd.args.map(({ ty, name, opt, named }) => {
-						if (ty[0] === '$')	return ''
-						if (named)			return `--${name}: ${ty}`
-						if (opt)			return `[${name}: ${ty}]`
-						if (named)			return `<${name}: ${ty}>`
-					}).filter(s => s).join(' ')
+				? `[usage] ${cmdName} ${ cmd.args
+					.map(({ ty, name, opt, named, perm }) => {
+						if (ty[0] === '$')	return
+						perm = perm ? `[perm] ${perm} ` : ''
+						if (named)			return `[--${perm}${name}: ${ty}]`
+						if (opt)			return `[${perm}${name}: ${ty}]`
+						if (named)			return `<${perm}${name}: ${ty}>`
+					})
+					.filter(s => s)
+					.join(' ')
 				}\n`
-				: 'no usage\n'
+				: '[no usage]\n'
 			)
-			+ `help: ${cmd.help ?? 'no information'}`,
+			+ `[help] ${cmd.help ?? 'no information'}`,
 		subs: {
 			'?': helphelp,
 			help: helphelp
@@ -122,6 +126,12 @@ export class CmdError extends Error {
 	}
 }
 
+export class PermError extends Error {
+	constructor(level, why) {
+		super(`permission denied${ why ? ' for ' + why : '' } (Require ${level})`)
+	}
+}
+
 export const runCmd = async (msg) => {
 	let raw = msg.raw_message.trimStart() || '?'
 	const uid = msg.sender.user_id
@@ -135,6 +145,13 @@ export const runCmd = async (msg) => {
 		.collection('my_env')
 		.findOne({ _id: uid }))
 		?.env ?? {}
+
+	const perm = uid === 0
+		? Infinity
+		: (await bot.mongo.db
+			.collection('perm')
+			.findOne({ _id: uid })
+		)?.level ?? 0
 
 	const [ tokens, flags ] = shell(raw, env)
 	const [ cmdName, ...args ] = tokens
@@ -152,8 +169,11 @@ export const runCmd = async (msg) => {
 		if (! cmd) throw 'not found'
 		if (! cmd.fn) throw 'not executable'
 
+		if (perm < cmd.perm) throw new PermError(cmd.perm)
+
 		const cookedArgs = cmd.args.map((rule) => {
 			const argErr = `arg (${rule.name}: ${rule.ty}): `
+			if (perm < rule.perm ?? 0) throw new PermError(rule.perm, argErr.slice(0, -1))
 			switch (rule.ty) {
 			case '$msg':
 				return msg
@@ -165,6 +185,10 @@ export const runCmd = async (msg) => {
 				return tokens
 			case '$self':
 				return cmd
+			case '$checkPerm':
+				return (level, why) => {
+					if (perm < level) throw new PermError(level, why)
+				}
 			case 'text':
 				return miniArgs.splice(0).join(' ')
 			case 'str':
@@ -216,11 +240,13 @@ export const runCmd = async (msg) => {
 			else throw 'Empty reply'
 		}
 		catch (err) {
+			if (err instanceof PermError) throw err
 			bot.logger.err(`Caught internal error in ${cookedCmdName}`)(err)
 			throw (err?.message ?? err) + ' (internal error)'
 		}
 	}
 	catch (err) {
+		if (err instanceof PermError) return msg.reply.err(err.message)
 		msg.reply.err(`${cookedCmdName}: ${err}`)
 	}
 }

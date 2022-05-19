@@ -7,8 +7,8 @@ export default () => ({
 	help: '骰子相关命令',
 	subs: {
 		jrrp: {
-			args: [ { ty: '$msg' } ],
 			help: '获取你的今日人品',
+			args: [ { ty: '$msg' } ],
 			fn: async (msg) => {
 				const uid = msg.sender.user_id
 				const col = bot.mongo.db.collection('dice_rp')
@@ -25,8 +25,8 @@ export default () => ({
 			},
 			subs: {
 				top: {
-					args: [ { ty: '$msg' } ],
 					help: '获取今天群内人品排行榜',
+					args: [ { ty: '$msg' } ],
 					fn: async (msg) => {
 						if (msg.message_type !== 'group') return '请在群内调用'
 						const members = await bot.oicq.getGroupMemberList(msg.group_id)
@@ -47,11 +47,12 @@ export default () => ({
 					}
 				},
 				history: {
+					perm: 1,
+					help: '获取您的历史人品',
 					args: [
-						{ ty: 'bool', name: 'chart', opt: true },
+						{ ty: 'bool', name: 'chart', opt: true, perm: 2 },
 						{ ty: '$uid' }
 					],
-					help: '获取您的历史人品',
 					fn: async (useChart, uid) => {
 						const docs = (await bot.mongo.db.collection('dice_rp')
 							.find({ uid })

@@ -17,10 +17,11 @@ export default ({ command: { CmdError } }) => ({
 		},
 
 		eval: {
+			perm: 1,
 			alias: [ '~' ],
 			help: 'Evaluate JavaScript <code>',
 			args: [
-				{ ty: 'str', name: 'globals', named: true },
+				{ ty: 'str', name: 'globals', named: true, perm: 5 },
 				{ ty: 'text', name: 'code' }
 			],
 			fn: async (globals, code) => {
