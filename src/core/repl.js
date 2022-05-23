@@ -5,6 +5,8 @@ import fs				from 'node:fs'
 import { mkfifo }		from 'mkfifo'
 import shell			from '../util/shell.js'
 
+export let server
+
 export const startREPL = async () => {
 	let input, output
 
@@ -78,23 +80,23 @@ export const startREPL = async () => {
 		}
 	}
 
-	const server = repl.start({
+	const s = repl.start({
 		input, output,
 		useGlobal: true, useColors: true,
 		preview: false, // Note: For compatibility with command mode. :(
 		prompt: modes.eval.prompt
 	})
 
-	modes.eval.eval = server.eval
-	modes.eval.writer = server.writer
-	modes.eval.completer = server.completer
+	modes.eval.eval = s.eval
+	modes.eval.writer = s.writer
+	modes.eval.completer = s.completer
 
-	server.on('exit', () => {
+	s.on('exit', () => {
 		bot.logger.mark('Interrupted by user.')
 		process.exit(0)
 	})
 
-	server.defineCommand('reload', {
+	s.defineCommand('reload', {
 		help: 'Reload a module defined in <src/core/loader.js>',
 		action: async (name) => {
 			try {
@@ -104,20 +106,20 @@ export const startREPL = async () => {
 			catch (err) {
 				bot.logger.fatal(`Failed to reload module ${name}: %o`, err)
 			}
-			server.displayPrompt()
+			s.displayPrompt()
 		}
 	})
 
 	const defineMode = name => {
 		const mode = modes[name]
-		server.defineCommand(name, {
+		s.defineCommand(name, {
 			help: `Enter ${name} mode`,
 			action: () => {
-				server.eval = mode.eval
-				server.writer = mode.writer
-				server.completer = mode.completer
-				server.setPrompt(mode.prompt)
-				server.displayPrompt()
+				s.eval = mode.eval
+				s.writer = mode.writer
+				s.completer = mode.completer
+				s.setPrompt(mode.prompt)
+				s.displayPrompt()
 			}
 		})
 	}
@@ -125,7 +127,7 @@ export const startREPL = async () => {
 	defineMode('eval')
 	defineMode('command')
 
-	delete server.commands.break
+	delete s.commands.break
 
-	return server
+	server = s
 }

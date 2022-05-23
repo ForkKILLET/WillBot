@@ -14,14 +14,20 @@ export const modules = {
 			.catch(bot.logger.err)
 			.then(newCfg => bot.cfg = newCfg)
 	},
+	mongo: {
+		path: './mongo.js',
+		callback: async () => {
+			if (! bot.mongo.db) await bot.mongo.connect()
+		}
+	},
 	repl: {
 		path: './repl.js',
 		callback: async () => {
 			if (bot.repls) {
 				bot.repls.restart = true
-				await bot.repls.close()
+				await bot.repl.server.close()
 				bot.logger.mark('Restarting REPL.')
-				bot.repls = await bot.repl.startREPL()
+				await bot.repl.startREPL()
 			}
 		}
 	},

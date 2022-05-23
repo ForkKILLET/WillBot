@@ -4,7 +4,6 @@ import './util/silent-experimental-warning.js'
 import path				from 'node:path'
 import minimist			from 'minimist'
 import { createClient }	from 'oicq'
-import { MongoClient }	from 'mongodb'
 import chalkT			from 'chalk-template'
 import Logger			from './util/logger.js'
 import { loadAll }		from './core/loader.js'
@@ -29,17 +28,6 @@ const startBot = async (logger) => {
 	logger.opt.file = file
 	logger.opt.stdout = stdout
 	logger.lv = bot.cfg.log.level ?? 'warn'
-
-	const { addr, port, name } = bot.cfg.database
-	const uri = encodeURI(`mongodb://${addr}:${port}`)
-	logger.mark(`Connecting MongoDb at ${uri}.`)
-
-	bot.mongo = {
-		client: new MongoClient(uri, { connectTimeoutMS: 5 * 1000 })
-	}
-	await bot.mongo.client.connect()
-	bot.mongo.db = bot.mongo.client.db(name ?? 'willbot')
-	logger.mark('Connected.')
 
 	const { uin, pw } = bot.cfg.account
 
