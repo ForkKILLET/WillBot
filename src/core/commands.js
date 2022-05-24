@@ -99,8 +99,8 @@ export const findCmd = (cmdName) => {
 	if (! cmdName) return now
 	const names = cmdName.split('.')
 	for (const name of names) {
+		if (! Object.prototype.hasOwnProperty.call(now.subs, name)) return null
 		now = now.subs[name]
-		if (! now) return null
 	}
 	return now
 }
