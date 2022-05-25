@@ -26,24 +26,61 @@ export default () => ({
 			subs: {
 				top: {
 					help: '获取今天群内人品排行榜',
-					args: [ { ty: '$msg' } ],
-					fn: async (msg) => {
+					args: [
+						{ ty: '$msg' },
+						{ ty: 'bool', name: 'chart', opt: true }
+					],
+					fn: async (msg, chart) => {
 						if (msg.message_type !== 'group') return '请在群内调用'
 						const members = await bot.oicq.getGroupMemberList(msg.group_id)
 
 						const col = bot.mongo.db.collection('dice_rp')
 
 						const now = + dayjs(new Date).startOf('day')
-						return '今日人品排行榜' + (await col.find({ day: now })
+						const top = (await col.find({ day: now })
 							.toArray())
+							.map(({ uid, rp }) => ({
+								member: members.get(uid), rp
+							}))
+							.filter(({ member }) => member)
 							.sort((doc1, doc2) => doc2.rp - doc1.rp)
-							.map(({ uid, rp }) => {
-								const member = members.get(uid)
-								return member
-									? `\n${member.card || member.nickname}: ${rp}`
-									: ''
+							.map(({ rp, member }) => ({ rp, name: member.card || member.nickname }))
+
+						if (! top.length) return '今天群内还没有人测过人品哦'
+
+						if (chart) {
+							top.reverse()
+
+							const cvs = canvas.createCanvas(800, 500)
+							const chart = echarts.init(cvs)
+							chart.setOption({
+								xAxis: {
+									type: 'value',
+									name: '人品',
+									min: 0,
+									max: 100
+								},
+								yAxis: {
+									type: 'category',
+									name: '群员',
+									data: top.map(({ name }) => name)
+								},
+								series: {
+									type: 'bar',
+									data: top.map(({ rp }) => rp),
+									label: {
+										show: true
+									}
+								},
+								backgroundColor: '#fff'
 							})
-							.join('') || '今天群内还没有人测过人品哦'
+
+							return segment.image(cvs.toBuffer())
+						}
+
+						return '今日人品排行榜\n' + top
+							.map(({ rp, name }) => `${name}: ${rp}`)
+							.join('\n')
 					}
 				},
 				history: {
@@ -73,6 +110,8 @@ export default () => ({
 							yAxis: {
 								type: 'value',
 								name: '人品',
+								min: 0,
+								max: 100
 							},
 							series: {
 								type: 'line',
