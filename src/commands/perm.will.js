@@ -6,19 +6,14 @@ export default (({ command: { CmdError }, mongo }) => ({
 			args: [
 				{ ty: 'num', name: 'uid' },
 				{ ty: 'num', name: 'level' },
-				{ ty: '$checkPerm' }
+				{ ty: '$checkPerm', user: true },
 			],
 			fn: async (uid, level, cp) => {
 				if (uid === 0) return new CmdError('Can\'t set WillBot\'s permission.')
 
 				cp(level, 'lower permission level then the target level')
 
-				const targetPerm = (await mongo.db
-					.collection('perm')
-					.findOne({ _id: uid }))
-					?.level ?? 0
-
-				cp(targetPerm, 'lower permission level then the target user')
+				await cp.user(uid, 'lower permission level than the target user')
 
 				await mongo.db
 					.collection('perm')

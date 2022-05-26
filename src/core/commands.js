@@ -90,7 +90,7 @@ export const loadCmd = async (glob) => {
 	for (const file of glob === '*'
 		? (await fs.readdir(path.resolve(srcPath, 'commands')))
 			.filter(file => file.endsWith(suffix))
-		: Array.isArray(glob) ? glob : [ glob ]
+		: (Array.isArray(glob) ? glob : [ glob ]).map(name => name + '.will.js')
 	) await _loadCmd(file)
 }
 
@@ -185,10 +185,21 @@ export const runCmd = async (msg) => {
 				return tokens
 			case '$self':
 				return cmd
-			case '$checkPerm':
-				return (level, why) => {
+			case '$checkPerm': {
+				const cp = (level, why) => {
 					if (perm < level) throw new PermError(level, why)
 				}
+				if (rule.user) {
+					cp.user = async (uid, why) => {
+						const level = (await bot.mongo.db
+							.collection('perm')
+							.findOne({ _id: uid }))
+							?.level ?? 0
+						cp(level, why)
+					}
+				}
+				return cp
+			}
 			case 'text':
 				return miniArgs.splice(0).join(' ')
 			case 'str':
@@ -237,7 +248,6 @@ export const runCmd = async (msg) => {
 			const reply = await cmd.fn(...cookedArgs)
 			if (reply instanceof CmdError) msg.reply.err(reply.message)
 			else if (reply) msg.reply(reply)
-			else throw 'Empty reply'
 		}
 		catch (err) {
 			if (err instanceof PermError) throw err

@@ -33,12 +33,12 @@ export const modules = {
 	},
 	command: {
 		path: './commands.js',
-		callback: async () => {
-			bot.cmds = {
+		callback: async (glob = '*') => {
+			bot.cmds ??= {
 				subs: {},
 				help: `Willbot v${bot.pack.default.version} β`
 			}
-			await bot.command.loadCmd('*')
+			await bot.command.loadCmd(glob)
 			bot.command.initCmd(bot.cmds, '(root)')
 			bot.userEnv = {}
 		}
@@ -51,12 +51,12 @@ export const loadAll = async () => {
 	}
 }
 
-export const load = async (name) => {
+export const load = async (name, ...arg) => {
 	bot.logger.info(`Loading module ${chalk.yellow(name)}...`)
 	const module = modules[name]
 	if (! module) throw `module ${chalk.yellow(name)}: not found`
 	else {
 		bot[name] = await import(`${module.path}?date=${Date.now()}`, { assert: module.assert })
-		await module.callback?.()
+		await module.callback?.(...arg)
 	}
 }

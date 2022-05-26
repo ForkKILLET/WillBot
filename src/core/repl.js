@@ -98,10 +98,10 @@ export const startREPL = async () => {
 
 	s.defineCommand('reload', {
 		help: 'Reload a module defined in <src/core/loader.js>',
-		action: async (name) => {
+		action: async (ln) => {
+			const [ name, ...arg ] = ln.split(/ +/g)
 			try {
-				if (name === '*') await bot.loader.loadAll()
-				else await bot.loader.load(name)
+				await bot.loader.load(name, ...arg)
 			}
 			catch (err) {
 				bot.logger.fatal(`Failed to reload module ${name}: %o`, err)

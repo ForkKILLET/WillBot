@@ -27,7 +27,7 @@ const startBot = async (logger) => {
 	const { file, stdout } = bot.cfg.log
 	logger.opt.file = file
 	logger.opt.stdout = stdout
-	logger.lv = bot.cfg.log.level ?? 'warn'
+	logger.lv = bot.cfg.log.level
 
 	const { uin, pw } = bot.cfg.account
 
@@ -43,7 +43,7 @@ const startBot = async (logger) => {
 			prefix: chalkT`[{yellow OICQ}] `,
 			file, stdout
 		})
-		oicq.logger.lv = 'warn'
+		oicq.logger.lv = bot.cfg.log.level
 		await oicq.login(pw)
 
 		await new Promise(res => bot.oicq.on('system.online', res))
