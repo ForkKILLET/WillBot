@@ -1,14 +1,14 @@
 import { fileURLToPath }	from 'node:url'
 import fs					from 'node:fs/promises'
 import path					from 'node:path'
-import chalk				from 'chalk'
+import chalkT				from 'chalk-template'
 import minimist				from 'minimist'
 import shell				from '../util/shell.js'
 
 const suffix = '.will.js'
 
 export const helphelp = {
-	__inited: true,
+	inited: true,
 	alias: [ 'help' ],
 	args: [],
 	fn: () => '?: alias: help\nusage: ?\nhelp: get help',
@@ -17,9 +17,10 @@ export const helphelp = {
 
 helphelp.subs['?'] = helphelp.subs.help = helphelp
 
-export const initCmd = (cmd, cmdName) => {
-	if (cmd.__inited) return
-	cmd.__inited = true
+export const initCmd = (cmd, cmdName, willName) => {
+	if (cmd.inited) return
+	cmd.inited = true
+	cmd.root = willName
 
 	const parseStrArg = ([ name, ty, ...rest ]) => ({
 		ty, name,
@@ -31,7 +32,7 @@ export const initCmd = (cmd, cmdName) => {
 
 	const subs = cmd.subs ??= {}
 	for (const subName in subs) {
-		initCmd(subs[subName], subName)
+		initCmd(subs[subName], subName, willName)
 	}
 	subs['?'] ??= {
 		alias: [ 'help' ],
@@ -68,19 +69,31 @@ export const initCmd = (cmd, cmdName) => {
 }
 
 const _loadCmd = async (file) => {
-	const { default: fn, name } = await import(
+	const { default: fn, name, onReload, config: configRule } = await import(
 		path.resolve(srcPath, 'commands', file + `?date=${Date.now()}`)
 	)
 	const willName = name ?? file.slice(0, - suffix.length)
 	try {
-		bot.logger.info(`Loading will ${chalk.cyan(willName)}...`)
-		initCmd(
-			bot.cmds.subs[willName] = await fn(bot),
-			willName
-		)
+		const { subs } = bot.cmds
+		await subs[willName]?.onReload?.(bot)
+		bot.logger.info(chalkT`Loading will {cyan ${willName}}...`)
+		const configWill = {
+			configRule
+		}
+		if (configRule) {
+			configWill.config = await bot.config.getConfig(willName, configRule)
+		}
+		const will = await fn(bot, configWill.config)
+		if (! will) {
+			bot.logger.warn(chalkT`Refused to load will {cyan ${willName}}`)
+			return
+		}
+		Object.assign(will, { onReload }, configWill)
+		initCmd(will, willName, willName)
+		subs[willName] = will
 	}
 	catch (err) {
-		bot.logger.err(`Failed to load will ${chalk.cyan(willName)}`)(err)
+		bot.logger.err(chalkT`Failed to load will {cyan ${willName}}`)(err)
 	}
 }
 
@@ -185,6 +198,10 @@ export const runCmd = async (msg) => {
 				return tokens
 			case '$self':
 				return cmd
+			case '$cfg':
+			case '$config':
+				return bot.cmds.subs[cmd.root].config
+			case '$cp':
 			case '$checkPerm': {
 				const cp = (level, why) => {
 					if (perm < level) throw new PermError(level, why)

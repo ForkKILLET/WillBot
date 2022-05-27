@@ -1,5 +1,5 @@
 import { format }	from 'node:util'
-import fs			from 'node:fs/promises'
+import fs			from 'node:fs'
 import chalk		from 'chalk'
 import { showErr }	from './error.js'
 
@@ -12,6 +12,7 @@ export default class Logger {
 
 		const logFns = {
 			debug: 'debug',
+			trace: 'trace',
 			info: 'info',
 			warn: 'warn',
 			error: 'error',
@@ -23,14 +24,14 @@ export default class Logger {
 			const f = (...p) => {
 				const s = format(...p)
 				if (opt.stdout !== false) console[logFns[lv]](s)
-				if (opt.file) fs.appendFile(opt.file, s + '\n')
+				if (opt.file) fs.appendFileSync(opt.file, s + '\n')
 			}
 
 			const timePrefix = `[${ chalk.grey(new Date().toJSON()) }] `
 			const lvPrefix = `[${ chalk[lvColors[i]](lv.toUpperCase()) }] `
 
 			this[lv] = (s, ...p) => {
-				if (opt._lv ?? 2 <= i) f(timePrefix + (opt.prefix ?? '') + lvPrefix + s, ...p)
+				if (opt._lv <= i) f(timePrefix + (opt.prefix ?? '') + lvPrefix + s, ...p)
 			}
 		}
 

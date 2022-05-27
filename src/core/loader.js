@@ -10,9 +10,15 @@ export const modules = {
 	},
 	config: {
 		path: './config.js',
-		callback: async () => await bot.config.getConfig(bot)
-			.catch(bot.logger.err)
-			.then(newCfg => bot.cfg = newCfg)
+		callback: async () => {
+			await bot.config.getConfig()
+				.catch(bot.logger.err)
+				.then(newCfg => bot.cfg = newCfg)
+			const { file, stdout } = bot.cfg.log
+			bot.logger.opt.file = file
+			bot.logger.opt.stdout = stdout
+			bot.logger.lv = bot.cfg.log.level
+		}
 	},
 	mongo: {
 		path: './mongo.js',
@@ -20,13 +26,19 @@ export const modules = {
 			if (! bot.mongo.db) await bot.mongo.connect()
 		}
 	},
+	oicqAdapter: {
+		path: './oicqAdapter.js',
+		callback: async () => {
+			if (bot.cliArg.login && ! bot.oicq) {
+				await bot.oicqAdapter.startOICQ()
+			}
+		}
+	},
 	repl: {
 		path: './repl.js',
 		callback: async () => {
-			if (bot.repls) {
-				bot.repls.restart = true
-				await bot.repl.server.close()
-				bot.logger.mark('Restarting REPL.')
+			if (! bot.repls) {
+				bot.logger.mark('Starting REPL.')
 				await bot.repl.startREPL()
 			}
 		}
@@ -38,9 +50,11 @@ export const modules = {
 				subs: {},
 				help: `Willbot v${bot.pack.default.version} β`
 			}
-			await bot.command.loadCmd(glob)
-			bot.command.initCmd(bot.cmds, '(root)')
-			bot.userEnv = {}
+			if (glob !== '-') {
+				await bot.command.loadCmd(glob)
+				bot.command.initCmd(bot.cmds, '(root)')
+			}
+			bot.userEnv ??= {}
 		}
 	}
 }

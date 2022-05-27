@@ -884,6 +884,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cosmokit@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "cosmokit@npm:1.1.2"
+  checksum: 031b52f5dcd5faf8aa2041f8524ec94e1c951cc5f30a55628e594a9c4a81226cede2e656304773e3159aa0c0e8579d6d36e5fe496397e852d192ef1846836f82
+  languageName: node
+  linkType: hard
+
 "cross-fetch@npm:3.1.5":
   version: 3.1.5
   resolution: "cross-fetch@npm:3.1.5"
@@ -2463,6 +2470,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"schemastery@npm:^3.4.3":
+  version: 3.4.3
+  resolution: "schemastery@npm:3.4.3"
+  dependencies:
+    cosmokit: ^1.1.2
+  checksum: 3b19738227f0b620ced56ed73f5d55b2c4a9eb24d927e29a4549e03a261d251cd7863a3483a6c8ea237b001ea942dd75feb553b89257c41c9c38639812fb88f4
+  languageName: node
+  linkType: hard
+
 "semver@npm:^6.0.0, semver@npm:^6.3.0":
   version: 6.3.0
   resolution: "semver@npm:6.3.0"
@@ -2884,6 +2900,7 @@ __metadata:
     oicq: ^2.2.2
     pretty-format: ^28.1.0
     puppeteer: ^14.0.0
+    schemastery: ^3.4.3
   languageName: unknown
   linkType: soft
 

@@ -1,5 +1,6 @@
 import { format }	from 'pretty-format'
 import vm			from 'vm'
+import Scm			from 'schemastery'
 
 export default ({ command: { CmdError } }) => ({
 	subs: {
@@ -13,6 +14,14 @@ export default ({ command: { CmdError } }) => ({
 			fn: (error, sen) => {
 				sen ||= '(empty message)'
 				return error ? new CmdError(sen) : sen
+			}
+		},
+
+		hello: {
+			help: 'Send configured hello text.',
+			args: [ { ty: '$cfg' } ],
+			fn: (cfg) => {
+				return cfg.hello
 			}
 		},
 
@@ -50,4 +59,12 @@ export default ({ command: { CmdError } }) => ({
 			)
 		}
 	}
+})
+
+export const onReload = () => {
+	bot.logger.info('test onReload')
+}
+
+export const config = Scm.object({
+	hello: Scm.string().default('Hello world! (default)')
 })
