@@ -17,4 +17,6 @@ export const streamToBuffer = (stream, maxSize = 0) => (
 	})
 )
 
-export const cloneJSON = value => JSON.parse(JSON.stringify(value))
+export const cloneJSON = val => JSON.parse(JSON.stringify(val))
+
+export const itemOrArray = val => Array.isArray(val) ? val : [ val ]

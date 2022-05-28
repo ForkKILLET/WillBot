@@ -84,10 +84,9 @@ export default () => ({
 					}
 				},
 				history: {
-					perm: 1,
 					help: '获取您的历史人品',
 					args: [
-						{ ty: 'bool', name: 'chart', opt: true, perm: 2 },
+						{ ty: 'bool', name: 'chart', opt: true, perm: 1 },
 						{ ty: '$uid' }
 					],
 					fn: async (useChart, uid) => {
@@ -115,7 +114,10 @@ export default () => ({
 							},
 							series: {
 								type: 'line',
-								data: docs.map(({ rp }) => rp)
+								data: docs.map(({ rp }) => rp),
+								label: {
+									show: true
+								}
 							},
 							backgroundColor: '#fff'
 						})

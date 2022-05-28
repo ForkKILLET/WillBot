@@ -115,7 +115,7 @@ export default (() => ({
 							.findOne({ _id: uid }))
 							?.commands ?? []
 
-						return `You have ${commands.length} with-commands:\n`
+						return `You have ${commands.length} with-command(s):\n`
 							+ commands.slice(0, 10).join('\n')
 							+ (commands.length > 10 ? '\n...and more' : '')
 					}

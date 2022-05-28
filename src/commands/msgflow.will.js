@@ -1,4 +1,6 @@
-import Scm from 'schemastery'
+import yaml				from 'js-yaml'
+import Scm				from 'schemastery'
+import { itemOrArray }	from '../util/toolkit.js'
 
 const checkAon = (rule, baseFn) => {
 	if (rule.all) return rule.all.every(r => checkAon(r, baseFn))
@@ -11,7 +13,7 @@ const onMessageFactory = (cfg) => async (msg) => {
 	const gid = msg.group_id, uid = msg.sender.user_id
 	const { raw_message: raw } = msg
 	for (const rule of cfg) {
-		if (rule.in.id && gid !== rule.in.id) continue
+		if (rule.in && ! itemOrArray(rule.in).some(i => i === gid)) continue
 		if (checkAon(rule.on, r => {
 			if (r.includes) return checkAon(r.includes, s => raw.includes(s))
 			if (r.matches) return checkAon(r.matches, re => raw.match(RegExp(re)))
@@ -36,7 +38,16 @@ export default (_, cfg) => {
 	bot.oicq.on('message.group', onMessage = onMessageFactory(cfg))
 
 	return {
-		help: 'Automatic message flow control.'
+		help: 'Automatic message flow control.',
+		subs: {
+			list: {
+				help: 'List msgflow rules.',
+				perm: 2,
+				alias: [ 'ls' ],
+				args: [],
+				fn: () => yaml.dump(cfg)
+			}
+		}
 	}
 }
 
@@ -57,7 +68,7 @@ const aon = (...bases) => {
 
 export const config = Scm.array(Scm.object({
 	name: Scm.string().required(),
-	in: Scm.number(),
+	in: Scm.union([ Scm.number(), Scm.array(Scm.number()) ]),
 	on: aon(
 		Scm.union([
 			Scm.object({

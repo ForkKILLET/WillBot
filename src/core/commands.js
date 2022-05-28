@@ -9,9 +9,10 @@ const suffix = '.will.js'
 
 export const helphelp = {
 	inited: true,
+	helphelp: true,
 	alias: [ 'help' ],
 	args: [],
-	fn: () => '?: alias: help\nusage: ?\nhelp: get help',
+	fn: () => '?: [perm] 0 [alias] help\n[usage] ?\n[help] get help',
 	subs: {}
 }
 
@@ -48,7 +49,7 @@ export const initCmd = (cmd, cmdName, willName) => {
 						perm = perm ? `[perm] ${perm} ` : ''
 						if (named)			return `[--${perm}${name}: ${ty}]`
 						if (opt)			return `[${perm}${name}: ${ty}]`
-						if (named)			return `<${perm}${name}: ${ty}>`
+						else				return `<${perm}${name}: ${ty}>`
 					})
 					.filter(s => s)
 					.join(' ')
@@ -186,7 +187,6 @@ export const runCmd = async (msg) => {
 
 		const cookedArgs = cmd.args.map((rule) => {
 			const argErr = `arg (${rule.name}: ${rule.ty}): `
-			if (perm < rule.perm ?? 0) throw new PermError(rule.perm, argErr.slice(0, -1))
 			switch (rule.ty) {
 			case '$msg':
 				return msg
@@ -234,6 +234,9 @@ export const runCmd = async (msg) => {
 					if (arg === undefined) {
 						if (! rule.opt) throw 'too few args'
 						return
+					}
+					else {
+						if (perm < rule.perm ?? 0) throw new PermError(rule.perm, argErr.slice(0, -1))
 					}
 				}
 				if (rule.ty === 'num') {
