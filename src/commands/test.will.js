@@ -1,12 +1,13 @@
 import { format }	from 'pretty-format'
 import vm			from 'vm'
 import Scm			from 'schemastery'
+import { sleep }	from '../util/toolkit.js'
 
 export default ({ command: { CmdError } }) => ({
 	subs: {
 		echo: {
 			alias: [ 'say' ],
-			help: 'Send <sentence> in the current context. Send error with --error on.',
+			help: 'Test reply. Send <sentence> in the current context. Send error with --error on.',
 			args: [
 				{ ty: 'bool', name: 'error', named: true },
 				{ ty: 'text', name: 'sentence' }
@@ -18,7 +19,7 @@ export default ({ command: { CmdError } }) => ({
 		},
 
 		hello: {
-			help: 'Send configured hello text.',
+			help: 'Test config. Send configured hello text.',
 			args: [ { ty: '$cfg' } ],
 			fn: (cfg) => {
 				return cfg.hello
@@ -28,7 +29,7 @@ export default ({ command: { CmdError } }) => ({
 		eval: {
 			perm: 1,
 			alias: [ '~' ],
-			help: 'Evaluate JavaScript <code>',
+			help: 'Test sandbox. Evaluate JavaScript <code>',
 			args: [
 				{ ty: 'str', name: 'globals', named: true, perm: 5 },
 				{ ty: 'text', name: 'code' }
@@ -48,7 +49,7 @@ export default ({ command: { CmdError } }) => ({
 		},
 
 		tokenize: {
-			help: 'Show tokens and flags of <input>.',
+			help: 'Test tokenizing. Show tokens and flags of <input>.',
 			args: [
 				{ ty: '$tokens' },
 				{ ty: '$flags' },
@@ -57,6 +58,16 @@ export default ({ command: { CmdError } }) => ({
 			fn: (tokens, flags, input) => (
 				`input: ${input}\ntokens: ${format(tokens)}\nflags: ${format(flags)}`
 			)
+		},
+
+		generator: {
+			help: 'Test the generator command. Send `1` and then `2` after a second.',
+			args: [],
+			async * fn () {
+				yield '1'
+				await sleep(1000)
+				yield '2'
+			}
 		}
 	}
 })

@@ -4,6 +4,11 @@ import path					from 'node:path'
 import chalkT				from 'chalk-template'
 import minimist				from 'minimist'
 import shell				from '../util/shell.js'
+import {
+	AsyncFunction,
+	GeneratorFunction,
+	AsyncGeneratorFunction
+}							from '../util/toolkit.js'
 
 const suffix = '.will.js'
 
@@ -265,9 +270,36 @@ export const runCmd = async (msg) => {
 		if (miniArgs.length) throw 'too many args'
 
 		try {
-			const reply = await cmd.fn(...cookedArgs)
-			if (reply instanceof CmdError) msg.reply.err(reply.message)
-			else if (reply) msg.reply(reply)
+			const handleReply = reply => {
+				if (reply instanceof CmdError) msg.reply.err(reply.message)
+				else if (reply) msg.reply(reply)
+			}
+			const ctor = Object.getPrototypeOf(cmd.fn).constructor
+			switch (ctor) {
+			case Function:{
+				let reply = cmd.fn(...cookedArgs)
+				if (reply instanceof Promise) reply = await reply
+				handleReply(reply)
+				break
+			}
+			case AsyncFunction: {
+				handleReply(await cmd.fn(...cookedArgs))
+				break
+			}
+			case GeneratorFunction:
+				for (let reply of cmd.fn(...cookedArgs)) {
+					if (reply instanceof Promise) reply = await reply
+					handleReply(reply)
+				}
+				break
+			case AsyncGeneratorFunction:
+				for await (let reply of cmd.fn(...cookedArgs)) {
+					handleReply(reply)
+				}
+				break
+			default:
+				throw `Unknown function type ${ctor}`
+			}
 		}
 		catch (err) {
 			if (err instanceof PermError) throw err

@@ -20,3 +20,9 @@ export const streamToBuffer = (stream, maxSize = 0) => (
 export const cloneJSON = val => JSON.parse(JSON.stringify(val))
 
 export const itemOrArray = val => Array.isArray(val) ? val : [ val ]
+
+export const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
+export const GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor
+export const AsyncGeneratorFunction = Object.getPrototypeOf(async function* () {}).constructor
+
+export const sleep = ms => new Promise(res => setTimeout(res, ms))
