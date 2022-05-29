@@ -59,12 +59,6 @@ export const modules = {
 	}
 }
 
-export const loadAll = async () => {
-	for (const moduleName in modules) {
-		await load(moduleName)
-	}
-}
-
 export const load = async (name, ...arg) => {
 	bot.logger.info(`Loading module ${chalk.yellow(name)}...`)
 	const module = modules[name]
@@ -72,5 +66,11 @@ export const load = async (name, ...arg) => {
 	else {
 		bot[name] = await import(`${module.path}?date=${Date.now()}`, { assert: module.assert })
 		await module.callback?.(...arg)
+	}
+}
+
+export const loadAll = async () => {
+	for (const moduleName in modules) {
+		await load(moduleName)
 	}
 }

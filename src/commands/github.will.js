@@ -34,7 +34,7 @@ export default () => ({
 						{ disable_animations: true },
 						Object.fromEntries(rest
 							.map((value, i) => [ self.args[i + 1].name, value ])
-							.filter(([, value ]) => value !== undefined)
+							.filter(([ , value ]) => value !== undefined)
 						)
 					))
 

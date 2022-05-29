@@ -20,7 +20,7 @@ export const startREPL = async () => {
 			else res()
 		}))
 
-		const vars = { 'io_pipe': pipePath }
+		const vars = { io_pipe: pipePath }
 		cp.spawn(command, args.map(arg => arg.replace(/{{(.*)}}/g, (_, k) => vars[k] ?? '')))
 
 		const ioPath = (await fs.promises.readFile(pipePath, { encoding: 'utf-8' })).trim()
@@ -58,13 +58,13 @@ export const startREPL = async () => {
 			writer: s => s,
 			completer: async (raw, cb) => {
 				const [ tokens ] = shell(raw)
-				if (tokens.length > 1) return cb(null, [ [], raw ])
+				if (tokens.length > 1) return cb(null, [[], raw ])
 				const names = tokens[0].split('.')
-				const ancestors = names.slice(0, -1).join('.')
-				const now = names.at(-1)
+				const ancestors = names.slice(0, - 1).join('.')
+				const now = names.at(- 1)
 
 				const cmd = await bot.command.findCmdWith(ancestors, 0)
-				if (! cmd?.subs) return cb(null, [ [], raw ])
+				if (! cmd?.subs) return cb(null, [[], raw ])
 
 				const subNames = Object.keys(cmd.subs)
 				const ancestorsPrefix = ancestors ? ancestors + '.' : ''

@@ -3,18 +3,6 @@ import path	from 'node:path'
 import yaml	from 'js-yaml'
 import Scm	from 'schemastery'
 
-export const getConfig = async (name = 'config', rule = configRule) => {
-	try {
-		const text = await fs.readFile(path.resolve(bot.cliArg['rc-path'], `${name}.yml`))
-		const config = yaml.load(text)
-		return rule(config)
-	}
-	catch (err) {
-		if (err.code === 'ENOENT') return null
-		else throw err
-	}
-}
-
 export const configRule = Scm.object({
 	log: Scm.object({
 		level: Scm.string(),
@@ -43,5 +31,19 @@ export const configRule = Scm.object({
 	commands: Scm.object({
 		prompts: Scm.array(Scm.string()).required(),
 		'error-prefix': Scm.string()
-	}),
+	})
 })
+
+export const getConfig = async (name = 'config', rule = configRule) => {
+	try {
+		const text = await fs.readFile(path.resolve(bot.cliArg['rc-path'], `${name}.yml`))
+		const config = yaml.load(text)
+		return rule(config)
+	}
+	catch (err) {
+		if (err.code === 'ENOENT') return null
+		throw err
+	}
+}
+
+

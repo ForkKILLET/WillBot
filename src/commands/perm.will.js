@@ -6,7 +6,7 @@ export default (({ command: { CmdError }, mongo }) => ({
 			args: [
 				{ ty: 'num', name: 'uid' },
 				{ ty: 'num', name: 'level' },
-				{ ty: '$checkPerm', user: true },
+				{ ty: '$checkPerm', user: true }
 			],
 			fn: async (uid, level, cp) => {
 				if (uid === 0) return new CmdError('Can\'t set WillBot\'s permission.')

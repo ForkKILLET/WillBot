@@ -19,8 +19,12 @@ export default (ln, vars) => {
 		sq: false,
 		dq: false,
 		var: false,
-		wh: true,
+		wh: true
 	}
+
+	const tokens = []
+	let now = '', enow = '', vnow = ''
+
 	const e = () => {
 		const es = String.fromCharCode(parseInt(enow, f.cesc === 'o' ? 8 : 16))
 		if (f.var) vnow += es
@@ -29,8 +33,6 @@ export default (ln, vars) => {
 		enow = ''
 	}
 
-	const tokens = []
-	let now = '', enow = '', vnow = ''
 	for (const ch of ln.trimStart() + '\0') {
 		if (f.esc) {
 			if (ch === 'x' || ch === 'u' || ch === '0') f.cesc = ch === '0' ? 'o' : ch
@@ -75,11 +77,11 @@ export default (ln, vars) => {
 		if (ch === '\\') f.esc = true
 		else if (ch === '\'' && ! f.dq) f.sq = ! f.sq
 		else if (ch === '"' && ! f.sq) f.dq = ! f.dq
-		// else if (! f.dq && ! f.sq && ch === '~') now += '/home'
+		// Else if (! f.dq && ! f.sq && ch === '~') now += '/home'
 		else if (ch === '$' && ! f.sq) f.var = true
 		else now += ch
 	}
-	if (now) tokens.push(now.slice(0, -1))
+	if (now) tokens.push(now.slice(0, - 1))
 
 	return [ tokens, f ]
 }

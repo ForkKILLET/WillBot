@@ -3,8 +3,12 @@ import fs			from 'node:fs'
 import chalk		from 'chalk'
 import { showErr }	from './error.js'
 
-const logLvs = [ 'trace', 'debug', 'info', 'warn', 'error', 'fatal', 'mark' ]
-const lvColors = [ 'cyanBright', 'cyanBright', 'blueBright', 'yellow', 'red', 'magenta', 'whiteBright' ]
+const logLvs = [
+	'trace', 'debug', 'info', 'warn', 'error', 'fatal', 'mark'
+]
+const lvColors = [
+	'cyanBright', 'cyanBright', 'blueBright', 'yellow', 'red', 'magenta', 'whiteBright'
+]
 
 export default class Logger {
 	constructor(opt = {}) {
@@ -17,7 +21,7 @@ export default class Logger {
 			warn: 'warn',
 			error: 'error',
 			fatal: 'error',
-			mark: 'log',
+			mark: 'log'
 		}
 
 		for (const [ i, lv ] of logLvs.entries()) {
@@ -27,7 +31,7 @@ export default class Logger {
 				if (opt.file) fs.appendFileSync(opt.file, s + '\n')
 			}
 
-			const timePrefix = `[${ chalk.grey(new Date().toJSON()) }] `
+			const timePrefix = `[${ chalk.grey((new Date).toJSON()) }] `
 			const lvPrefix = `[${ chalk[lvColors[i]](lv.toUpperCase()) }] `
 
 			this[lv] = (s, ...p) => {
@@ -41,6 +45,7 @@ export default class Logger {
 	get lv() {
 		return logLvs[this.opt._lv]
 	}
+
 	set lv(value) {
 		const i = logLvs.indexOf(value)
 		this.opt._lv = i

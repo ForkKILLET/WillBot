@@ -25,7 +25,144 @@ rules:
   semi:
     - error
     - never
-  no-constant-condition: off
+  unicode-bom:
+    - error
+    - never
+
+  eqeqeq: error
+  no-caller: error
   no-cond-assign: off
+  no-constant-condition: off
+  no-else-return: error
+  no-extend-native: error
+  no-return-await: error
+  no-shadow-restricted-names: error
+  no-unmodified-loop-condition: error
+  no-useless-call: error
+  no-use-before-define: error
+  no-var: error
+  require-await: error
+  prefer-const: error
+  prefer-rest-params: error
+  symbol-description: error
+
+  # spacing
+  arrow-spacing:
+    - error
+    - before: true
+      after: true
+  yield-star-spacing:
+    - error
+    - before: true
+      after: false
+  array-bracket-spacing:
+    - error
+    - always
+    - arraysInArrays: false
+  block-spacing:
+    - error
+    - always
+  brace-style:
+    - error
+    - stroustrup
+  camelcase:
+    - error
+    - properties: never
+  comma-dangle:
+    - error
+    - never
+  comma-spacing:
+    - error
+    - before: false
+      after: true
+  comma-style:
+    - error
+    - last
+  eol-last: error
+  func-call-spacing:
+    - error
+    - never
+  func-names:
+    - error
+    - never
+  implicit-arrow-linebreak:
+    - error
+    - beside
+  key-spacing:
+    - error
+    - beforeColon: false
+      afterColon: true
+      mode: minimum
+  keyword-spacing:
+    - error
+    - after: true
+  lines-between-class-members:
+    - error
+    - always
+  new-parens:
+    - error
+    - never
+  no-array-constructor: error
+  no-lonely-if: error
+  no-multiple-empty-lines: error
+  no-new-object: error
+  no-trailing-spaces: error
+  no-whitespace-before-property: error
+  object-curly-spacing:
+    - error
+    - always
+  operator-assignment: error
+  operator-linebreak:
+    - error
+    - before
+  padded-blocks:
+    - error
+    - never
+  quote-props:
+    - error
+    - as-needed
+  space-before-blocks:
+    - error
+    - always
+  space-before-function-paren:
+    - error
+    - asyncArrow: always
+      anonymous: always
+      named: never
+  space-in-parens:
+    - error
+    - never
+  space-infix-ops: error
+  space-unary-ops:
+    - error
+    - words: true
+      nonwords: true
+  switch-colon-spacing:
+    - error
+    - before: false
+      after: true
+  template-tag-spacing:
+    - error
+    - always
+
+  # maximum
+  max-len:
+    - error
+    - 100
+  max-params:
+    - error
+    - 5
+  max-statements-per-line:
+    - error
+    - max: 2
+
+  # comment
+  capitalized-comments: error
+  multiline-comment-style:
+    - error
+    - separate-lines
+  spaced-comment:
+    - error
+    - always
 globals:
   bot: true

@@ -6,7 +6,7 @@ export const startOICQ = async () => {
 	const { uin, pw } = bot.cfg.account
 
 	if (bot.cliArg.login) {
-		bot.logger.mark(chalkT`Logging into {blueBright ${uin}} with OICQ client.`)
+		bot.logger.mark(chalkT `Logging into {blueBright ${uin}} with OICQ client.`)
 
 		const oicq = createClient(uin, {
 			log_level: 'off',
@@ -14,7 +14,7 @@ export const startOICQ = async () => {
 		})
 		bot.oicq = oicq
 		oicq.logger = bot.logger
-		oicq.logger.opt.prefix = chalkT`[{yellow OICQ}]`
+		oicq.logger.opt.prefix = chalkT `[{yellow OICQ}]`
 
 		await oicq.login(pw)
 

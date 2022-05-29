@@ -63,7 +63,7 @@ export default ({ command: { CmdError } }) => ({
 		generator: {
 			help: 'Test the generator command. Send `1` and then `2` after a second.',
 			args: [],
-			async * fn () {
+			async * fn() {
 				yield '1'
 				await sleep(1000)
 				yield '2'

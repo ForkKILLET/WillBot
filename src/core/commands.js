@@ -54,7 +54,7 @@ export const initCmd = (cmd, cmdName, willName) => {
 						perm = perm ? `[perm] ${perm} ` : ''
 						if (named)			return `[--${perm}${name}: ${ty}]`
 						if (opt)			return `[${perm}${name}: ${ty}]`
-						else				return `<${perm}${name}: ${ty}>`
+						return `<${perm}${name}: ${ty}>`
 					})
 					.filter(s => s)
 					.join(' ')
@@ -74,6 +74,8 @@ export const initCmd = (cmd, cmdName, willName) => {
 	}
 }
 
+export const srcPath = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
+
 const _loadCmd = async (file) => {
 	const { default: fn, name, onReload, config: configRule } = await import(
 		path.resolve(srcPath, 'commands', file + `?date=${Date.now()}`)
@@ -82,7 +84,7 @@ const _loadCmd = async (file) => {
 	try {
 		const { subs } = bot.cmds
 		await subs[willName]?.onReload?.(bot)
-		bot.logger.info(chalkT`Loading will {cyan ${willName}}...`)
+		bot.logger.info(chalkT `Loading will {cyan ${willName}}...`)
 		const configWill = {
 			configRule
 		}
@@ -91,7 +93,7 @@ const _loadCmd = async (file) => {
 		}
 		const will = await fn(bot, configWill.config)
 		if (! will) {
-			bot.logger.warn(chalkT`Refused to load will {cyan ${willName}}`)
+			bot.logger.warn(chalkT `Refused to load will {cyan ${willName}}`)
 			return
 		}
 		Object.assign(will, { onReload }, configWill)
@@ -99,11 +101,9 @@ const _loadCmd = async (file) => {
 		subs[willName] = will
 	}
 	catch (err) {
-		bot.logger.err(chalkT`Failed to load will {cyan ${willName}}`)(err)
+		bot.logger.err(chalkT `Failed to load will {cyan ${willName}}`)(err)
 	}
 }
-
-export const srcPath = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 
 export const loadCmd = async (glob) => {
 	for (const file of glob === '*'
@@ -152,7 +152,7 @@ export class PermError extends Error {
 }
 
 export const runCmd = async (msg) => {
-	let raw = msg.raw_message.trimStart() || '?'
+	const raw = msg.raw_message.trimStart() || '?'
 	const uid = msg.sender.user_id
 	bot.logger.info('Running by %d: %s', uid, raw)
 
@@ -240,9 +240,8 @@ export const runCmd = async (msg) => {
 						if (! rule.opt) throw 'too few args'
 						return
 					}
-					else {
-						if (perm < rule.perm ?? 0) throw new PermError(rule.perm, argErr.slice(0, -1))
-					}
+
+					if (perm < rule.perm ?? 0) throw new PermError(rule.perm, argErr.slice(0, - 1))
 				}
 				if (rule.ty === 'num') {
 					arg = Number(arg)
@@ -276,7 +275,7 @@ export const runCmd = async (msg) => {
 			}
 			const ctor = Object.getPrototypeOf(cmd.fn).constructor
 			switch (ctor) {
-			case Function:{
+			case Function: {
 				let reply = cmd.fn(...cookedArgs)
 				if (reply instanceof Promise) reply = await reply
 				handleReply(reply)
@@ -293,7 +292,7 @@ export const runCmd = async (msg) => {
 				}
 				break
 			case AsyncGeneratorFunction:
-				for await (let reply of cmd.fn(...cookedArgs)) {
+				for await (const reply of cmd.fn(...cookedArgs)) {
 					handleReply(reply)
 				}
 				break

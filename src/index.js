@@ -16,7 +16,7 @@ const startBot = async (logger) => {
 		},
 		default: {
 			'rc-path': path.resolve(process.env.HOME, '.config/WillbotBeta'),
-			'login': true
+			login: true
 		},
 		boolean: [ 'login' ]
 	})
@@ -26,14 +26,20 @@ const startBot = async (logger) => {
 
 const main = async () => {
 	const logger = new Logger({
-		prefix: chalkT`[{cyanBright WB-β}] `
+		prefix: chalkT `[{cyanBright WB-β}] `
 	})
 	await startBot(logger).catch(logger.err('Failed to start bot:', 1))
 
 	process
-		.on('exit', (code) => bot.logger.mark(`Exit with status code ${code}`))
-		.on('unhandledRejection', (err, promise) => bot.logger.fatal('Uncaught rejection %o at promise %o', err, promise))
-		.on('uncaughtException', (err) => bot.logger.fatal('Uncaught exception %o', err))
+		.on('exit',
+			(code) => bot.logger.mark(`Exit with status code ${code}`)
+		)
+		.on('unhandledRejection',
+			(err, promise) => bot.logger.fatal('Uncaught rejection %o at promise %o', err, promise)
+		)
+		.on('uncaughtException',
+			(err) => bot.logger.fatal('Uncaught exception %o', err)
+		)
 }
 
 main()

@@ -7,7 +7,7 @@ import { cloneJSON }	from '../util/toolkit.js'
 import { ObjectId }		from 'mongodb'
 
 export default () => {
-	const { games, players } = bot.chess ??= { games: {}, players: {} } 
+	const { games, players } = bot.chess ??= { games: {}, players: {} }
 
 	const checkPos = (r, c) => r >= 1 && r <= 4 && c >= 1 && c <= 4
 
@@ -18,14 +18,14 @@ export default () => {
 		arrow_up: 2,
 		arrow_left: 3,
 		arrow_down: 4,
-		arrow_right: 5,
+		arrow_right: 5
 	}
 
 	const ArrowDir = {
-		[PieceTypes.arrow_up]:		[ -1, 0 ],
-		[PieceTypes.arrow_left]:	[ 0, -1 ],
-		[PieceTypes.arrow_down]:	[ +1, 0 ],
-		[PieceTypes.arrow_right]:	[ 0, +1 ],
+		[PieceTypes.arrow_up]:		[ - 1, 0 ],
+		[PieceTypes.arrow_left]:	[ 0, - 1 ],
+		[PieceTypes.arrow_down]:	[ + 1, 0 ],
+		[PieceTypes.arrow_right]:	[ 0, + 1 ]
 	}
 
 	const PieceTypeStrs = [
@@ -102,13 +102,13 @@ export default () => {
 	}
 
 	const calcTowers = (game) => {
-		const towers = [ [], [] ]
+		const towers = [[], []]
 		; [ 0, 1 ].forEach(
 			player => game.board.forEach(
 				(row, r) => (row.forEach(
 					(block, c) => {
 						if (block.reduce(
-							(acc, owner) => acc + (owner === null ? -1 : owner === player), 0
+							(acc, owner) => acc + (owner === null ? - 1 : owner === player), 0
 						) >= 2) towers[player].push([ r + 1, c + 1 ])
 					})
 				)
@@ -116,6 +116,8 @@ export default () => {
 		)
 		return towers
 	}
+
+	const colors = [ '#f00', '#00f' ]
 
 	const drawPlace = ({ row, col, player, ctx, type, typeWithoutDir, pieceNum }) => {
 		// Note: 擦除手中棋子
@@ -166,9 +168,6 @@ export default () => {
 		return { cvs, ctx }
 	}
 
-
-
-	const colors = [ '#f00', '#00f' ]
 	const colorNames = [ '红方', '蓝方' ]
 
 	const subs = {
@@ -198,20 +197,26 @@ export default () => {
 						const game = games[name]
 						return [
 							subs.show.fn(name, uid),
-							[ 0, 1 ].map(player => `${colorNames[player]}：${game.players[player] || '暂无'}`).join('\n') + '\n' +
-							`游戏时长：${dayjs(game.startTime).fromNow(true)}\n` +
-							`回合数：${game.round}` +
-							(game.final ? game.finalReply : '')
+							[ 0, 1 ]
+								.map(player => (
+									`${colorNames[player]}：${game.players[player] || '暂无'}`
+								))
+								.join('\n') + '\n'
+								+ `游戏时长：${dayjs(game.startTime).fromNow(true)}\n`
+								+ `回合数：${game.round}`
+								+ (game.final ? game.finalReply : '')
 						]
 					}
-				},
+				}
 			}
 		},
 		list: {
 			alias: [ 'ls' ],
 			help: '查看所有游戏',
 			args: [],
-			fn: () => Object.keys(games).map(name => `${name}(${games[name].players.join(', ')})`).join('\n') || '还没有游戏'
+			fn: () => Object.keys(games)
+				.map(name => `${name}(${games[name].players.join(', ')})`)
+				.join('\n') || '还没有游戏'
 		},
 		start: {
 			help: '开启一局命名为 <name> 的游戏',
@@ -220,7 +225,7 @@ export default () => {
 				if (games[name]) return `已经存在游戏 ${name}`
 				if (players[uid]) return `您已经有正在进行的游戏 ${players[uid]}`
 				if (name.length > 8) return '命名不能超过 8 个字符'
-	
+
 				const { cvs, ctx } = drawInit()
 
 				const game = games[players[uid] = name] = {
@@ -231,7 +236,7 @@ export default () => {
 
 				if (! customInit) Object.assign(game, {
 					round: 0,
-					pieces: [0, 1].map(() => [ 5, 5, 5 ]),
+					pieces: [ 0, 1 ].map(() => [ 5, 5, 5 ]),
 					record: [],
 					board: Array.from({ length: 4 },
 						() => Array.from({ length: 4 },
@@ -256,7 +261,7 @@ export default () => {
 				if (! game) return `不存在游戏 ${name}`
 
 				if (game.players.length === 2) return `游戏 ${name} 人数已满：${game.players.join(', ')}`
-				
+
 				players[uid] = name
 				game.players[1] = uid
 				return `已加入游戏 ${name}`
@@ -268,7 +273,7 @@ export default () => {
 			fn: (uid) => {
 				const name = players[uid]
 				if (! name) return '您不在游戏中'
-				
+
 				let reply = `已退出游戏 ${name}`
 				const game = games[name]
 				if (game.players[0] === uid) {
@@ -305,7 +310,7 @@ export default () => {
 					delete players[u2id]
 					return `已踢出玩家 ${u2id}`
 				}
-				else return `游戏 ${name} 没有第二位玩家`
+				return `游戏 ${name} 没有第二位玩家`
 			}
 		},
 		end: {
@@ -364,7 +369,8 @@ export default () => {
 				else {
 					const { win = 0, lose = 0, tie = 0 } = playerInfo
 					const all = win + lose + tie
-					reply += `\n胜：${win}，负：${lose}，平：${tie}\n总：${all}，胜率：${ (win / all * 100).toFixed(2) }%`
+					reply += `\n胜：${win}，负：${lose}，平：${tie}\n总：${all}，`
+						+ `胜率：${ (win / all * 100).toFixed(2) }%`
 				}
 
 				return reply
@@ -388,9 +394,13 @@ export default () => {
 				const [ t0, t1 ] = towers.map(t => t.length)
 				towers.t0 = t0, towers.t1 = t1
 
-				return `${colorNames[0]}和${colorNames[1]}有 ${t0} ${ t0 < t1 ? '<' : t0 > t1 ? '>' : '=' } ${t1} 座塔\n`
+				return `${colorNames[0]}和${colorNames[1]}有 `
+					+ `${t0} ${ t0 < t1 ? '<' : t0 > t1 ? '>' : '=' } ${t1} 座塔\n`
 					+ towers.map(
-						(t, player) => colorNames[player] + '：' + (t.map(([ r, c ]) => `(${r}, ${c})`).join('、') || '无')
+						(t, player) => colorNames[player] + '：' + (t
+							.map(([ r, c ]) => `(${r}, ${c})`)
+							.join('、') || '无'
+						)
 					).join('\n')
 			}
 		},
@@ -442,7 +452,7 @@ export default () => {
 				}
 
 				if (block[typeWithoutDir]) return `该位置已经有 【${typeNameWithoutDir}】了`
-				
+
 				// Note: 以上均为允许落子判定，不修改游戏数据
 
 				game.round ++
@@ -460,12 +470,12 @@ export default () => {
 				// Note: 计算限定
 				switch (typeWithoutDir) {
 				case PieceTypes.circle:
-					game.ltdPos = [ [ row, col ] ]
+					game.ltdPos = [[ row, col ]]
 					break
 				case PieceTypes.square:
 					game.ltdPos = [
 						[ row - 1, col ], [ row, col - 1 ],
-						[ row + 1, col ], [ row, col + 1 ],
+						[ row + 1, col ], [ row, col + 1 ]
 					].filter(([ r, c ]) => checkPos(r, c))
 					break
 				case PieceTypes.arrow: {
@@ -481,11 +491,11 @@ export default () => {
 				}
 				}
 
-				game.ltdPos = game.ltdPos.filter(([ r, c ]) =>
-					game.board[r - 1][c - 1].some((x, t) =>
+				game.ltdPos = game.ltdPos.filter(([ r, c ]) => (
+					game.board[r - 1][c - 1].some((x, t) => (
 						x === null && game.pieces[player ^ 1][t] > 0
-					)
-				)
+					))
+				))
 
 				// Note: 绘制落子
 				drawPlace({ row, col, player, ctx: game.ctx, type, typeWithoutDir, pieceNum })
@@ -536,7 +546,7 @@ export default () => {
 						game.finalReply = finalReply
 						reply += '\n' + finalReply
 					}
-				} 
+				}
 
 				return [
 					subs.show.fn(name),
@@ -617,7 +627,7 @@ export default () => {
 						gif.start()
 						gif.setRepeat(0)
 						gif.setDelay(delay ?? 800)
-						
+
 						const { ctx } = drawInit()
 						game.record.forEach(place => {
 							drawPlace({ ...place, ctx })
@@ -651,7 +661,9 @@ export default () => {
 							.collection('pyrga_records')
 							.find(query)
 							.project({ _id: 1, name: 1, saveTime: 1 })
-							.map(it => `${it._id} @ ${ dayjs(it.saveTime).format('YYYY-MM-DD') }: ${it.name}`)
+							.map(it => `${it._id} @ ${
+								dayjs(it.saveTime).format('YYYY-MM-DD')
+							}: ${it.name}`)
 							.toArray()
 						return ids.join('\n') || '暂无记录'
 					}
