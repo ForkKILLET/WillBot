@@ -31,11 +31,11 @@ export default class Logger {
 				if (opt.file) fs.appendFileSync(opt.file, s + '\n')
 			}
 
-			const timePrefix = `[${ chalk.grey((new Date).toJSON()) }] `
+			const timePrefix = () => `[${ chalk.grey((new Date).toLocaleString()) }] `
 			const lvPrefix = `[${ chalk[lvColors[i]](lv.toUpperCase()) }] `
 
 			this[lv] = (s, ...p) => {
-				if (opt._lv <= i) f(timePrefix + (opt.prefix ?? '') + lvPrefix + s, ...p)
+				if (opt._lv <= i) f(timePrefix() + (opt.prefix ?? '') + lvPrefix + s, ...p)
 			}
 		}
 

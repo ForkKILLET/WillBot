@@ -5,7 +5,8 @@ import Scm	from 'schemastery'
 
 export const configRule = Scm.object({
 	log: Scm.object({
-		level: Scm.string(),
+		level: Scm.string().default('info'),
+		oicqLevel: Scm.string().default('warn'),
 		file: Scm.string(),
 		stdout: Scm.boolean()
 	}),

@@ -48,7 +48,9 @@ export const modules = {
 		callback: async (glob = '*') => {
 			bot.cmds ??= {
 				subs: {},
-				help: `Willbot v${bot.pack.default.version} β`
+				get help() {
+					return `Willbot v${bot.pack.default.version} β`
+				}
 			}
 			if (glob !== '-') {
 				await bot.command.loadCmd(glob)
