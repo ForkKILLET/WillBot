@@ -15,7 +15,10 @@ const startBot = async (logger) => {
 			'rc-path': 'c'
 		},
 		default: {
-			'rc-path': path.resolve(process.env.HOME, '.config/WillbotBeta'),
+			'rc-path': path.resolve(
+				process.env.HOME ?? process.env.USERPROFILE ?? '',
+				'.config/WillbotBeta'
+			),
 			login: true
 		},
 		boolean: [ 'login' ]
