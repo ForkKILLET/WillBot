@@ -18,6 +18,11 @@ export const startOICQ = async () => {
 		oicq.logger.lv = oicqLevel
 		oicq.logger.opt.prefix = chalkT `[{yellow OICQ}] `
 
+		oicq.on('system.login.slider', () => {
+			oicq.logger.mark('Input ticket: ')
+			process.stdin.once('data', ticket => oicq.submitSlider(String(ticket).trim()))
+		})
+
 		await oicq.login(pw)
 
 		await new Promise(res => bot.oicq.on('system.online', res))
