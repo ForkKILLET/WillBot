@@ -35,7 +35,7 @@ export default class Logger {
 			const lvPrefix = `[${ chalk[lvColors[i]](lv.toUpperCase()) }] `
 
 			this[lv] = (s, ...p) => {
-				if (opt._lv <= i) f(timePrefix() + (opt.prefix ?? '') + lvPrefix + s, ...p)
+				if (opt._lv === undefined || opt._lv <= i) f(timePrefix() + (opt.prefix ?? '') + lvPrefix + s, ...p)
 			}
 		}
 

@@ -11,9 +11,8 @@ export const modules = {
 	config: {
 		path: './config.js',
 		callback: async () => {
-			await bot.config.getConfig()
-				.catch(bot.logger.err)
-				.then(newCfg => bot.cfg = newCfg)
+			bot.cfg = await bot.config.getConfig()
+				.catch(bot.logger.err('Illegal config', 1))
 			const { file, stdout } = bot.cfg.log
 			bot.logger.opt.file = file
 			bot.logger.opt.stdout = stdout
