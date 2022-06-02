@@ -1,4 +1,5 @@
-import chalk from 'chalk'
+import path		from 'node:path'
+import chalk	from 'chalk'
 
 export const modules = {
 	loader: {
@@ -13,6 +14,9 @@ export const modules = {
 		callback: async () => {
 			bot.cfg = await bot.config.getConfig()
 				.catch(bot.logger.err('Illegal config', 1))
+			if (! bot.cfg) throw Error(`Config file doesn't exist at ${
+				path.resolve(bot.cliArg['rc-path'], 'config.yml')
+			}`)
 			const { file, stdout } = bot.cfg.log
 			bot.logger.opt.file = file
 			bot.logger.opt.stdout = stdout
