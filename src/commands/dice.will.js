@@ -3,7 +3,7 @@ import canvas		from 'canvas'
 import echarts		from 'echarts'
 import { segment }	from 'oicq'
 
-export default () => ({
+export default ({ command: { CmdError } }) => ({
 	help: '骰子相关命令',
 	subs: {
 		jrrp: {
@@ -125,6 +125,16 @@ export default () => ({
 						return segment.image(cvs.toBuffer())
 					}
 				}
+			}
+		},
+
+		d: {
+			help: '掷骰，范围 1 到 <max>',
+			args: [ { ty: 'num', name: 'max', int: true } ],
+			fn: (max) => {
+				if (max <= 0) return new CmdError('掷骰范围必须是正数')
+				if (max >= 1e6) return new CmdError('掷骰范围太大')
+				return String((Math.random() * 1e6 | 0) % max + 1)
 			}
 		}
 	}

@@ -68,6 +68,12 @@ export default ({ command: { CmdError } }) => ({
 				await sleep(1000)
 				yield '2'
 			}
+		},
+
+		msg: {
+			help: 'Test oicq message.',
+			args: [ { ty: '$msg' } ],
+			fn: msg => JSON.stringify(msg)
 		}
 	}
 })

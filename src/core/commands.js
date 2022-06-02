@@ -222,6 +222,14 @@ export const runCmd = async (msg) => {
 				}
 				return cp
 			}
+			case '$quote':
+				if (msg.source) {
+					return msg.source
+				}
+				else if (! rule.opt) {
+					throw 'require quote reply'
+				}
+				return
 			case 'text':
 				return miniArgs.splice(0).join(' ')
 			case 'str':
