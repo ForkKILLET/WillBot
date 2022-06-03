@@ -18,12 +18,16 @@ export const startOICQ = async () => {
 		oicq.logger.lv = oicqLevel
 		oicq.logger.opt.prefix = chalkT `[{yellow OICQ}] `
 
-		oicq.on('system.login.slider', () => {
-			oicq.logger.mark('Input ticket: ')
-			process.stdin.once('data', ticket => oicq.submitSlider(String(ticket).trim()))
-		})
-
-		await oicq.login(pw)
+		oicq
+			.on('system.login.slider', () => {
+				oicq.logger.mark('Input ticket: ')
+				process.stdin.once('data', ticket => oicq.submitSlider(String(ticket).trim()))
+			})
+			.on('system.login.qrcode', () => {
+				oicq.logger.mark('Enter to login with QR code: ')
+				process.stdin.once('data', () => oicq.login())
+			})
+			.login(pw)
 
 		await new Promise(res => bot.oicq.on('system.online', res))
 		bot.logger.mark('Logged in.')
