@@ -2,7 +2,6 @@ import repl				from 'node:repl'
 import cp				from 'node:child_process'
 import path				from 'node:path'
 import fs				from 'node:fs'
-import { mkfifo }		from 'mkfifo'
 import shell			from '../util/shell.js'
 
 export let server
@@ -12,6 +11,8 @@ export const startREPL = async () => {
 
 	const { on, command, args } = bot.cfg.repl['new-session']
 	if (on) {
+		const { mkfifo } = await import('mkfifo')
+
 		const date = Date.now()
 		const pipePath = path.resolve(bot.cliArg['rc-path'], `repl-io-${date}.pipe`)
 
