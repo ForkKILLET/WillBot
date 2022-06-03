@@ -78,7 +78,7 @@ export const srcPath = path.dirname(path.dirname(fileURLToPath(import.meta.url))
 
 const _loadCmd = async (file) => {
 	const { default: fn, name, onReload, config: configRule } = await import(
-		path.resolve(srcPath, 'commands', file + `?date=${Date.now()}`)
+		'file://' + path.resolve(srcPath, 'commands', file + `?date=${Date.now()}`)
 	)
 	const willName = name ?? file.slice(0, - suffix.length)
 	try {
