@@ -4,14 +4,15 @@ import chalkT			from 'chalk-template'
 import Logger			from '../util/logger.js'
 
 export const startOICQ = async () => {
-	const { account: { uin, pw }, log: { oicqLevel } } = bot.cfg
+	const { account: { uin, pw, platform }, log: { oicqLevel } } = bot.cfg
 
 	if (bot.cliArg.login) {
 		bot.logger.mark(chalkT `Logging into {blueBright ${uin}} with OICQ client.`)
 
 		const oicq = createClient(uin, {
 			log_level: 'off',
-			data_dir: path.resolve(bot.cliArg['rc-path'], 'oicq-data')
+			data_dir: path.resolve(bot.cliArg['rc-path'], 'oicq-data'),
+			platform
 		})
 		bot.oicq = oicq
 		oicq.logger = new Logger({ ...bot.logger.opt })

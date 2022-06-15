@@ -12,7 +12,8 @@ export const configRule = Scm.object({
 	}),
 	account: Scm.object({
 		uin: Scm.number().required(),
-		pw: Scm.union([ Scm.string(), Scm.never() ])
+		pw: Scm.union([ Scm.string(), Scm.never() ]),
+		platform: Scm.union([ 1, 2, 3, 4, 5 ])
 	}),
 	database: Scm.object({
 		addr: Scm.string().required(),
