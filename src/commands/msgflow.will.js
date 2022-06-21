@@ -44,8 +44,15 @@ export default (_, cfg) => {
 				help: 'List msgflow rules.',
 				perm: 2,
 				alias: [ 'ls' ],
-				args: [],
-				fn: () => yaml.dump(cfg)
+				args: [ { ty: 'str', name: 'name', opt: true } ],
+				fn: (name) => {
+					if (name) {
+						const rule = cfg.find(it => it.name === name)
+						if (! rule) return `No msgflow rule named "${name}"`
+						return yaml.dump(rule)
+					}
+					return yaml.dump(cfg)
+				}
 			}
 		}
 	}

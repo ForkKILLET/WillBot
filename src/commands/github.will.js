@@ -1,7 +1,7 @@
 import puppeteer	from 'puppeteer'
 import { segment }	from 'oicq'
 
-const githubRepo = /^(?:https|git)(?::\/\/|@)github\.com[/:]([^/:]+)\/(.+)(?:\.git$)?/
+const githubRepo = /^(?:(?:https|git)(?::\/\/|@)github\.com[/:])?([^/:]+)\/(.+)(?:\.git$)?/
 const githubUser = /^(?:https:\/\/github\.com\/)?([^/:]+)$/
 
 const screenshotSvg = async (url) => {
