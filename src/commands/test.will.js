@@ -1,7 +1,9 @@
-import { format }	from 'pretty-format'
-import vm			from 'vm'
-import Scm			from 'schemastery'
-import { sleep }	from '../util/toolkit.js'
+import cp				from 'node:child_process'
+import vm				from 'node:vm'
+import { promisify }	from 'node:util'
+import { format }		from 'pretty-format'
+import Scm				from 'schemastery'
+import { sleep }		from '../util/toolkit.js'
 
 export default ({ command: { CmdError } }) => ({
 	subs: {
@@ -44,6 +46,32 @@ export default ({ command: { CmdError } }) => ({
 				}
 				catch (err) {
 					return new CmdError(format(err))
+				}
+			}
+		},
+
+		shell: {
+			help: 'Run command in shell',
+			alias: [ '$' ],
+			perm: 5,
+			args: [ { ty: 'text', name: 'code' } ],
+			async * fn(code) {
+				let stdout, stderr
+				// TODO: Abort
+				try {
+					({ stdout, stderr } = await promisify(cp.exec)(code, {
+						timeout: 10 * 1000
+					}))
+					return
+				}
+				catch (err) {
+					({ stdout, stderr } = err)
+					yield new CmdError(err.message + ` (exit code ${err.code})`)
+				}
+				finally {
+					if (stdout) yield stdout
+					if (stderr) yield new CmdError(stderr)
+					if (! stdout && ! stderr) yield '(empty stdout and stderr)'
 				}
 			}
 		},
