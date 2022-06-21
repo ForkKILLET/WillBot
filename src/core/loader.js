@@ -31,10 +31,8 @@ export const modules = {
 	},
 	fastify: {
 		path: './fastify.js',
-		callback: async () => {
-			if (! bot.fastify.server) {
-				await bot.fastify.init()
-			}
+		callback: () => {
+			bot.fastify.clean()
 		}
 	},
 	oicqAdapter: {
@@ -57,6 +55,8 @@ export const modules = {
 	command: {
 		path: './commands.js',
 		callback: async (glob = '*') => {
+			bot.fastify.clean()
+
 			bot.cmds ??= {
 				subs: {},
 				get help() {
@@ -69,7 +69,7 @@ export const modules = {
 			}
 			bot.userEnv ??= {}
 
-			await bot.fastify.reload()
+			await bot.fastify.start()
 		}
 	}
 }

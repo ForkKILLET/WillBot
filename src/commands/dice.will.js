@@ -3,7 +3,7 @@ import canvas		from 'canvas'
 import echarts		from 'echarts'
 import { segment }	from 'oicq'
 
-export default ({ command: { CmdError },  }) => {
+export default ({ command: { CmdError } }) => {
 	const subs = {
 		jrrp: {
 			help: '获取你的今日人品',
@@ -180,8 +180,4 @@ export default ({ command: { CmdError },  }) => {
 		help: '骰子相关命令',
 		subs
 	}
-}
-
-export const onReload = async () => {
-	await fastify.close()
 }

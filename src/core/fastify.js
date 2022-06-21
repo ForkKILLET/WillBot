@@ -1,18 +1,15 @@
 import Fastify		from 'fastify'
 
 export let server
-let listening = false
 
-export const init = () => {
-    if (! bot.cfg.server.port) return
-
+export const clean = async () => {
+    if (server) {
+        await server.close()
+    }
     server = Fastify()
 }
 
-export const reload = async () => {
-    if (listening) await server.close()
-    listening = true
-
+export const start = async () => {
     const { port } = bot.cfg.server
     await server.listen({ port })
     bot.logger.mark(`Fastify listening at http://127.0.0.1:${port}.`)
