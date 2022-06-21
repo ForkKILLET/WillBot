@@ -29,11 +29,19 @@ export const modules = {
 			if (! bot.mongo.db) await bot.mongo.connect()
 		}
 	},
+	fastify: {
+		path: './fastify.js',
+		callback: async () => {
+			if (! bot.fastify.server) {
+				await bot.fastify.init()
+			}
+		}
+	},
 	oicqAdapter: {
 		path: './oicqAdapter.js',
 		callback: async () => {
 			if (bot.cliArg.login && ! bot.oicq) {
-				await bot.oicqAdapter.startOICQ()
+				await bot.oicqAdapter.start()
 			}
 		}
 	},
@@ -60,6 +68,8 @@ export const modules = {
 				bot.command.initCmd(bot.cmds, '(root)')
 			}
 			bot.userEnv ??= {}
+
+			await bot.fastify.reload()
 		}
 	}
 }

@@ -3,9 +3,8 @@ import canvas		from 'canvas'
 import echarts		from 'echarts'
 import { segment }	from 'oicq'
 
-export default ({ command: { CmdError } }) => ({
-	help: '骰子相关命令',
-	subs: {
+export default ({ command: { CmdError },  }) => {
+	const subs = {
 		jrrp: {
 			help: '获取你的今日人品',
 			args: [ { ty: '$msg' } ],
@@ -46,13 +45,22 @@ export default ({ command: { CmdError } }) => ({
 							.sort((doc1, doc2) => doc2.rp - doc1.rp)
 							.map(({ rp, member }) => ({ rp, name: member.card || member.nickname }))
 
+						if (msg.data_type === 'raw') return top
+
 						if (! top.length) return '今天群内还没有人测过人品哦'
 
-						if (chart) {
+						if (chart || msg.data_type === 'chart') {
 							top.reverse()
 
 							const cvs = canvas.createCanvas(800, 500)
-							const chart = echarts.init(cvs)
+							const chart = msg.web
+								? echarts.init(null, null, {
+									ssr: true,
+									renderer: 'svg',
+									width: 800,
+									height: 500
+								})
+								: echarts.init(cvs)
 							chart.setOption({
 								xAxis: {
 									type: 'value',
@@ -75,9 +83,19 @@ export default ({ command: { CmdError } }) => ({
 								backgroundColor: '#fff'
 							})
 
-							return segment.image(cvs.toBuffer())
+							return msg.web
+								? chart.renderToSVGString()
+								: segment.image(cvs.toBuffer())
 						}
 
+						if (msg.web) return (
+							`<h1>今日人品排行榜</h1>` +
+							`<p>群：${ msg.group_id }</p>` +
+							`<ol>` + top
+								.map(({ rp, name }) => `<li>${name}: ${rp}</li>`)
+								.join('') +
+							`</ol>`
+						)
 						return '今日人品排行榜\n' + top
 							.map(({ rp, name }) => `${name}: ${rp}`)
 							.join('\n')
@@ -138,4 +156,32 @@ export default ({ command: { CmdError } }) => ({
 			}
 		}
 	}
-})
+
+	bot.fastify.server?.get?.('/jrrp/top', async (req, res) => {
+		const { uid, gid, passwd, type = 'text' } = req.query
+		
+		if (type === 'raw') res.type('application/json; charset=utf-8')
+		else res.type('text/html; charset=utf-8')
+		
+		if (! await bot.mongo.db
+			.collection('auth')
+			.findOne({ _id: + uid, passwd })
+		) return `<p>Auth failure.</p>`
+
+		return await subs.jrrp.subs.top.fn({
+			message_type: 'group',
+			group_id: + gid,
+			web: true,
+			data_type: type
+		})
+	})
+
+	return {
+		help: '骰子相关命令',
+		subs
+	}
+}
+
+export const onReload = async () => {
+	await fastify.close()
+}

@@ -222,6 +222,13 @@ export const runCmd = async (msg) => {
 				}
 				return cp
 			}
+			case '$ca':
+			case '$checkAuth':
+				return async (uid, passwd) => (
+					!! await bot.mongo.db
+						.collection('auth')
+						.findOne({ _id: uid, passwd })
+				)
 			case '$quote':
 				if (msg.source) {
 					return msg.source

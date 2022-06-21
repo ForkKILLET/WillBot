@@ -49,7 +49,9 @@ export const startREPL = async () => {
 							user_id: 0
 						},
 						raw_message: raw.replace(/\r?\n$/, ''),
-						reply: s => resolve(s)
+						message_type: 'private',
+						reply: s => resolve(s),
+						repl: true
 					}
 					bot.command.runCmd(fakeMsg)
 				})

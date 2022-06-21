@@ -3,7 +3,7 @@ import { createClient }	from 'oicq'
 import chalkT			from 'chalk-template'
 import Logger			from '../util/logger.js'
 
-export const startOICQ = async () => {
+export const start = async () => {
 	const { account: { uin, pw, platform }, log: { oicqLevel } } = bot.cfg
 
 	if (bot.cliArg.login) {

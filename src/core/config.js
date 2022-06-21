@@ -20,6 +20,9 @@ export const configRule = Scm.object({
 		port: Scm.number().required(),
 		name: Scm.string()
 	}),
+	server: Scm.object({
+		port: Scm.number()
+	}),
 	repl: Scm.object({
 		prompt: Scm.object({
 			eval: Scm.string(),
