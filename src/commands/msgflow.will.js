@@ -88,7 +88,7 @@ export const config = Scm.array(Scm.object({
 	),
 	do: Scm.object({
 		recall: Scm.boolean(),
-		mute: Scm.number().default(5 * 60),
+		mute: Scm.number(),
 		reply: Scm.string()
 	})
 }))
