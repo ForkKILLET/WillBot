@@ -444,14 +444,15 @@ export default () => {
 
 				if (game.ltdPos) {
 					if (! game.ltdPos.length) {
-						if (block.find(x => typeof x === 'number'))
+						if (block.some(x => typeof x === 'number'))
 							return '对手上一子限定范围为空，必须在空白格落子'
 					}
 					else if (! game.ltdPos.find(([ r, c ]) => r === row && c === col))
 						return '该位置不在对手上一子的限定范围内'
 				}
 
-				if (block[typeWithoutDir]) return `该位置已经有 【${typeNameWithoutDir}】了`
+				if (typeof block[typeWithoutDir] === 'number')
+					return `该位置已经有【${typeNameWithoutDir}】了`
 
 				// Note: 以上均为允许落子判定，不修改游戏数据
 
