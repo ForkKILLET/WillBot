@@ -26,3 +26,5 @@ export const GeneratorFunction = Object.getPrototypeOf(function* () {}).construc
 export const AsyncGeneratorFunction = Object.getPrototypeOf(async function* () {}).constructor
 
 export const sleep = ms => new Promise(res => setTimeout(res, ms))
+
+export const randomItem = arr => arr[ (Math.random() * 1e8 | 0) % arr.length ]
