@@ -1,7 +1,9 @@
-import * as cheerio from 'cheerio'
-import fetch        from 'node-fetch'
-import dedent       from 'dedent'
-import { segment }  from 'oicq'
+import * as cheerio     from 'cheerio'
+import fetch            from 'node-fetch'
+import dedent           from 'dedent'
+import { segment }      from 'oicq'
+import Scm              from 'schemastery'
+import HttpsProxyAgent  from 'https-proxy-agent'
 import {
     randomItem, streamToBuffer
 }                   from '../util/toolkit.js'
@@ -10,7 +12,8 @@ const pixiv = 'https://www.pixiv.net'
 
 const modes = [ 'daily', 'weekly', 'monthly', 'rookie', 'original', 'male', 'female' ]
 
-export default ({ command: { CmdError } }) => {
+export default ({ command: { CmdError } }, cfg) => {
+    const agent = cfg.proxy && new HttpsProxyAgent(cfg.proxy)
     const subs = {
         rank: {
             help: dedent`
@@ -20,12 +23,14 @@ export default ({ command: { CmdError } }) => {
                 Use YYYYMMDD to specify [date].
             `,
             args: [
+                { ty: '$msg' },
                 { ty: 'str', name: 'mode', opt: true },
                 { ty: 'bool', name: 'r18', opt: true },
                 { ty: 'num', name: 'date', opt: true },
-                { ty: 'num', name: 'rank', int: true, opt: true }
+                { ty: 'num', name: 'rank', int: true, opt: true },
+                { ty: 'bool', name: 'verbose', opt: true }
             ],
-            async * fn (mode = 'daily', r18, date, rk) {
+            async fn (msg, mode = 'daily', r18, date, rk, verbose) {
                 if (! modes.includes(mode))
                     return new CmdError('Illegal mode.')
                 if (r18) {
@@ -36,16 +41,42 @@ export default ({ command: { CmdError } }) => {
                 }
                 const param = { mode }
                 if (date) param.date = date
-                const rank = await (await fetch(`${pixiv}/ranking.php?` + new URLSearchParams(param))).text()
+                const rank = await (
+                    await fetch(`${pixiv}/ranking.php?` + new URLSearchParams(param), { agent })
+                ).text()
+
                 const $rank = cheerio.load(rank)
-                const workUrls = [ ... $rank('.ranking-items > section > div > a.work') ].map(el => el.attribs.href)
+                const artUrls = [ ... $rank('.ranking-items > section > div > a.work') ]
+                    .map(el => el.attribs.href)
 
-                const artUrl = rk ? workUrls[rk - 1] : randomItem(workUrls)
-                const artId = artUrl.split('/').at(-1)
+                let artUrl, artId
+                if (rk) {
+                    artUrl = artUrls[rk - 1]
+                    artId = artUrl.split('/').at(-1)
+                }
+                else if (msg.message_type === 'group') {
+                    const col = await bot.mongo.db.collection(`pixiv_group_history`)
+                    const { history = {} } = await col.findOne({ _id: msg.group_id }) ?? {}
+                    do {
+                        if (! (artUrl = randomItem(artUrls))) {
+                            return 'Not found.'
+                        }
+                        artId = artUrl.split('/').at(-1)
+                    }
+                    while (history[artId])
+                    await col.updateOne(
+                        { _id: msg.group_id },
+                        { $set: { [`history.${artId}`]: true } },
+                        { upsert: true }
+                    )
+                }
 
-                yield `Getting ${rk ? rk + '#' : 'a random'} artwork from ${mode} ranking. id: ${artId}`
-
-                yield await subs.get.fn(artId)
+                return [
+                    verbose
+                        ? `Getting ${rk ? rk + '#' : 'a random'} artwork from ${mode} ranking. id: ${artId}`
+                        : artId,
+                    await subs.get.fn(artId)
+                ]
             }
         },
 
@@ -56,7 +87,7 @@ export default ({ command: { CmdError } }) => {
             ],
             fn: async (id) => {
                 const artUrl = `${pixiv}/artworks/${id}`
-                const art = await (await fetch(artUrl)).text()
+                const art = await (await fetch(artUrl, { agent })).text()
 
                 bot.art = art
 
@@ -67,9 +98,8 @@ export default ({ command: { CmdError } }) => {
                 const imgData = data.illust[id]
 
                 const img = await fetch(imgData.urls.regular, {
-                    headers: {
-                        Referer: artUrl
-                    }
+                    headers: { Referer: artUrl },
+                    agent
                 })
 
                 return segment.image(await streamToBuffer(img.body))
@@ -82,3 +112,7 @@ export default ({ command: { CmdError } }) => {
         subs
     }
 }
+
+export const config = Scm.object({
+    proxy: Scm.string()
+})
