@@ -1,4 +1,9 @@
+# Package
+
 node_modules/
 yarn-error.log
-
-*.d.ts
+.yarn/cache
+.yarn/build-state.yml
+.yarn/unplugged
+.yarn/sdks
+.yarn/install-state.gz
