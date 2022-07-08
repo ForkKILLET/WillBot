@@ -52,7 +52,7 @@ export default ({ command: { CmdError } }) => ({
 					+ new URLSearchParams(Object.assign(
 						{ disable_animations: true, username: username[1] },
 						Object.fromEntries(rest
-							.map((value, i) => [ self.args[i + 1].name, value ])
+							.map((value, i) => [ self.args[i + 2].name, value ])
 							.filter(([ , value ]) => value !== undefined)
 						)
 					))

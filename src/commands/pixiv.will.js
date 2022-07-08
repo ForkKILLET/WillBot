@@ -6,14 +6,14 @@ import Scm              from 'schemastery'
 import HttpsProxyAgent  from 'https-proxy-agent'
 import {
     randomItem, streamToBuffer
-}                   from '../util/toolkit.js'
+}                       from '../util/toolkit.js'
 
 const pixiv = 'https://www.pixiv.net'
 
 const modes = [ 'daily', 'weekly', 'monthly', 'rookie', 'original', 'male', 'female' ]
 
 export default ({ command: { CmdError } }, cfg) => {
-    const agent = cfg.proxy && new HttpsProxyAgent(cfg.proxy)
+    const agent = cfg?.proxy && new HttpsProxyAgent(cfg.proxy)
     const subs = {
         rank: {
             help: dedent`
@@ -54,8 +54,8 @@ export default ({ command: { CmdError } }, cfg) => {
                     artUrl = artUrls[rk - 1]
                     artId = artUrl.split('/').at(-1)
                 }
-                else if (msg.message_type === 'group') {
-                    const col = await bot.mongo.db.collection(`pixiv_group_history`)
+                else {
+                    const col = await bot.mongo.db.collection(`pixiv_${msg.message_type}_history`)
                     const { history = {} } = await col.findOne({ _id: msg.group_id }) ?? {}
                     do {
                         if (! (artUrl = randomItem(artUrls))) {
@@ -65,7 +65,7 @@ export default ({ command: { CmdError } }, cfg) => {
                     }
                     while (history[artId])
                     await col.updateOne(
-                        { _id: msg.group_id },
+                        { _id: msg.group_id ?? msg.sender.user_id },
                         { $set: { [`history.${artId}`]: true } },
                         { upsert: true }
                     )
@@ -80,12 +80,29 @@ export default ({ command: { CmdError } }, cfg) => {
             }
         },
 
+        info: {
+            args: [
+                { ty: '$msg' }
+            ],
+            async fn(msg) {
+                let info = ''
+                info += `View (${msg.message_type}): ${
+                    Object.values((await bot.mongo.db
+                        .collection(`pixiv_${msg.message_type}_history`)
+                        .findOne({ _id: msg.group_id ?? msg.sender.user_id }))
+                        ?.history ?? {}
+                    ).length
+                }\n`
+                return info
+            }
+        },
+
         get: {
             help: 'Get a Pixiv artwork by <id>.',
             args: [
                 { ty: 'str', name: 'id' }
             ],
-            fn: async (id) => {
+            async fn (id) {
                 const artUrl = `${pixiv}/artworks/${id}`
                 const art = await (await fetch(artUrl, { agent })).text()
 

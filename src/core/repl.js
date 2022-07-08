@@ -1,41 +1,9 @@
 import repl				from 'node:repl'
-import cp				from 'node:child_process'
-import path				from 'node:path'
-import fs				from 'node:fs'
 import shell			from '../util/shell.js'
 
 export let server
 
 export const startREPL = async () => {
-	let input, output
-
-	const { on, command, args } = bot.cfg.repl['new-session']
-	if (on) {
-		const { mkfifo } = await import('mkfifo')
-
-		const date = Date.now()
-		const pipePath = path.resolve(bot.cliArg['rc-path'], `repl-io-${date}.pipe`)
-
-		await new Promise((res, rej) => mkfifo(pipePath, 0o755, (err) => {
-			if (err) rej(err)
-			else res()
-		}))
-
-		const vars = { io_pipe: pipePath }
-		cp.spawn(command, args.map(arg => arg.replace(/{{(.*)}}/g, (_, k) => vars[k] ?? '')))
-
-		const ioPath = (await fs.promises.readFile(pipePath, { encoding: 'utf-8' })).trim()
-
-		await fs.promises.rm(pipePath)
-
-		input = fs.createReadStream(ioPath)
-		output = fs.createWriteStream(ioPath)
-	}
-	else {
-		input = process.stdin
-		output = process.stdout
-	}
-
 	const modes = {
 		eval: {
 			prompt: bot.cfg.repl.prompt.eval ?? 'eval> '
@@ -84,7 +52,7 @@ export const startREPL = async () => {
 	}
 
 	const s = repl.start({
-		input, output,
+		input: process.stdin, output: process.stdout,
 		useGlobal: true, useColors: true,
 		preview: false, // Note: For compatibility with command mode. :(
 		prompt: modes.eval.prompt
@@ -95,6 +63,7 @@ export const startREPL = async () => {
 	modes.eval.completer = s.completer
 
 	s.on('exit', () => {
+		if (s.restarting) return
 		bot.logger.mark('Interrupted by user.')
 		process.exit(0)
 	})

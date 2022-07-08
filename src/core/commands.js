@@ -197,6 +197,8 @@ export const runCmd = async (msg) => {
 				return msg
 			case '$uid':
 				return uid
+			case '$gid':
+				return msg.group_id
 			case '$flags':
 				return flags
 			case '$tokens':
@@ -284,7 +286,16 @@ export const runCmd = async (msg) => {
 		if (miniArgs.length) throw 'too many args'
 
 		try {
-			const handleReply = reply => {
+			const handleReply = async reply => {
+				// TODO: refactor
+				const result = await bot.beforeReply?.({
+					group_id: msg.group_id,
+					sender: { user_id: 0 },
+					raw_message: reply instanceof CmdError ? reply.message : reply
+				})
+				if (result?.abort) return
+				if (result?.modify) return await handleReply(result.modify)
+
 				if (reply instanceof CmdError) msg.reply.err(reply.message)
 				else if (reply) msg.reply(reply)
 			}
@@ -293,22 +304,22 @@ export const runCmd = async (msg) => {
 			case Function: {
 				let reply = cmd.fn(...cookedArgs)
 				if (reply instanceof Promise) reply = await reply
-				handleReply(reply)
+				await handleReply(reply)
 				break
 			}
 			case AsyncFunction: {
-				handleReply(await cmd.fn(...cookedArgs))
+				await handleReply(await cmd.fn(...cookedArgs))
 				break
 			}
 			case GeneratorFunction:
 				for (let reply of cmd.fn(...cookedArgs)) {
 					if (reply instanceof Promise) reply = await reply
-					handleReply(reply)
+					await handleReply(reply)
 				}
 				break
 			case AsyncGeneratorFunction:
 				for await (const reply of cmd.fn(...cookedArgs)) {
-					handleReply(reply)
+					await handleReply(reply)
 				}
 				break
 			default:

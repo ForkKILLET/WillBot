@@ -12,6 +12,8 @@ const checkAon = (rule, baseFn) => {
 const onMessageFactory = (cfg) => async (msg) => {
 	const gid = msg.group_id, uid = msg.sender.user_id
 	const { raw_message: raw } = msg
+	if (typeof raw !== 'string') return
+
 	for (const rule of cfg) {
 		if (rule.in && ! itemOrArray(rule.in).some(i => i === gid)) continue
 		if (checkAon(rule.on, r => {
@@ -19,12 +21,15 @@ const onMessageFactory = (cfg) => async (msg) => {
 			if (r.matches) return checkAon(r.matches, re => raw.match(RegExp(re)))
 		})) {
 			if (rule.do.recall) {
+				if (! uid) return { abort: true }
 				await bot.oicq.deleteMsg(msg.message_id)
 			}
 			if (rule.do.reply) {
+				if (! uid) return { modify: rule.do.reply }
 				await msg.reply(rule.do.reply)
 			}
 			if (rule.do.mute) {
+				if (! uid) return { abort: true }
 				await bot.oicq.setGroupBan(gid, uid, rule.do.mute)
 			}
 		}
@@ -36,6 +41,9 @@ let onMessage
 export default (_, cfg) => {
 	if (! bot.oicq) return
 	bot.oicq.on('message.group', onMessage = onMessageFactory(cfg))
+
+	// Todo: refactor
+	bot.beforeReply = onMessageFactory(cfg)
 
 	return {
 		help: 'Automatic message flow control.',

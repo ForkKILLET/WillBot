@@ -46,10 +46,13 @@ export const modules = {
 	repl: {
 		path: './repl.js',
 		callback: async () => {
-			if (! bot.repls) {
-				bot.logger.mark('Starting REPL.')
-				await bot.repl.startREPL()
+			const s = bot.repl.server
+			if (s) {
+				s.restarting = true
+				s.close()
 			}
+			bot.logger.mark('Starting REPL.')
+			await bot.repl.startREPL()
 		}
 	},
 	command: {
