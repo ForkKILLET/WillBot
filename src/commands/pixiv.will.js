@@ -56,16 +56,18 @@ export default ({ command: { CmdError } }, cfg) => {
                 }
                 else {
                     const col = await bot.mongo.db.collection(`pixiv_${msg.message_type}_history`)
-                    const { history = {} } = await col.findOne({ _id: msg.group_id }) ?? {}
-                    do {
+                    const _id = msg.group_id ?? msg.sender.user_id
+                    const { history = {} } = await col.findOne({ _id }) ?? {}
+                    while (true) {
                         if (! (artUrl = randomItem(artUrls))) {
                             return 'Not found.'
                         }
                         artId = artUrl.split('/').at(-1)
+                        if (history[artId]) artUrls.splice(artUrls.indexOf(artUrl), 1)
+                        else break
                     }
-                    while (history[artId])
                     await col.updateOne(
-                        { _id: msg.group_id ?? msg.sender.user_id },
+                        { _id },
                         { $set: { [`history.${artId}`]: true } },
                         { upsert: true }
                     )
