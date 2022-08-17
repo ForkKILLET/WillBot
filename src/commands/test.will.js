@@ -8,6 +8,7 @@ import { sleep }		from '../util/toolkit.js'
 export default ({ command: { CmdError } }) => ({
 	subs: {
 		echo: {
+			perm: 2,
 			alias: [ 'say' ],
 			help: 'Test reply. Send <sentence> in the current context. Send error with --error on.',
 			args: [
