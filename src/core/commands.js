@@ -3,6 +3,10 @@ import fs					from 'node:fs/promises'
 import path					from 'node:path'
 import chalkT				from 'chalk-template'
 import minimist				from 'minimist'
+import {
+	genGroupMessageId,
+	genDmMessageId
+}							from 'oicq/lib/message/index.js'
 import shell				from '../util/shell.js'
 import {
 	AsyncFunction,
@@ -233,6 +237,10 @@ export const runCmd = async (msg) => {
 				)
 			case '$quote':
 				if (msg.source) {
+					const { source } = msg 
+					source.message_id = msg.message_type === 'group'
+						? genGroupMessageId(msg.group_id, source.user_id, source.seq, source.rand, source.time)
+						: genDmMessageId(source.user_id, source.seq, source.rand, source.time)
 					return msg.source
 				}
 				else if (! rule.opt) {

@@ -34,6 +34,7 @@ export const start = async () => {
 		bot.logger.mark('Logged in.')
 
 		oicq.on('message', async (msg) => {
+			msg.raw_message = msg.raw_message.trimStart()
 			const prompt = bot.cfg.commands.prompts.find(s => msg.raw_message.startsWith(s))
 			if (prompt) {
 				msg.raw_message = msg.raw_message.slice(prompt.length)
