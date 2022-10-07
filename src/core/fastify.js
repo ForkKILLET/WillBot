@@ -11,6 +11,9 @@ export const clean = async () => {
 
 export const start = async () => {
     const { port } = bot.cfg.server
-    await server.listen({ port })
-    bot.logger.mark(`Fastify listening at http://127.0.0.1:${port}.`)
+
+	if (port) {
+		await server.listen({ port })
+		bot.logger.mark(`Fastify listening at http://127.0.0.1:${port}.`)
+	}
 }

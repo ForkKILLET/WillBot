@@ -176,7 +176,11 @@ export const runCmd = async (msg) => {
 			.findOne({ _id: uid })
 		)?.level ?? 0
 
-	const [ tokens, flags ] = shell(raw, env)
+	const [ tokens, flags ] = shell(raw, {
+		...env,
+		'_i': uid,
+		'_g': msg.group_id || ''
+	})
 	const [ cmdName, ...args ] = tokens
 	const { _: miniArgs, ...named } = minimist(args)
 
@@ -192,7 +196,7 @@ export const runCmd = async (msg) => {
 		if (! cmd) throw 'not found'
 		if (! cmd.fn) throw 'not executable'
 
-		if (perm < cmd.perm) throw new PermError(cmd.perm)
+		if (perm < cmd.perm ?? 0) throw new PermError(cmd.perm)
 
 		const cookedArgs = cmd.args.map((rule) => {
 			const argErr = `arg (${rule.name}: ${rule.ty}): `
@@ -247,6 +251,8 @@ export const runCmd = async (msg) => {
 					throw 'require quote reply'
 				}
 				return
+			case 'words':
+				return miniArgs.splice(0)
 			case 'text':
 				return miniArgs.splice(0).join(' ')
 			case 'str':

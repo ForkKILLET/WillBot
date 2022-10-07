@@ -1,3 +1,5 @@
+*.disabled
+
 # Package
 
 node_modules/

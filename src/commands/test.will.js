@@ -42,7 +42,7 @@ export default ({ command: { CmdError } }) => ({
 					const context = Object.create(null)
 					globals?.split(',')?.forEach(key => context[key] = global[key])
 					let res = vm.runInContext(code, vm.createContext(context))
-					if (res instanceof Promise) res = await res
+					while (res + '' === '[object Promise]') res = await res
 					return format(res)
 				}
 				catch (err) {

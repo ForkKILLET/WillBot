@@ -1,7 +1,8 @@
-import dayjs		from 'dayjs'
-import canvas		from 'canvas'
-import echarts		from 'echarts'
-import { segment }	from 'oicq'
+import dayjs			from 'dayjs'
+import canvas			from 'canvas'
+import echarts			from 'echarts'
+import { segment }		from 'oicq'
+import { randomItem }	from '../util/toolkit.js'
 
 export default ({ command: { CmdError } }) => {
 	const subs = {
@@ -20,7 +21,7 @@ export default ({ command: { CmdError } }) => {
 					await col.insertOne({ uid, day: now, rp })
 					return `你今天的人品是 ${rp}`
 				}
-				return `今天已经测过人品啦，是 ${doc.rp}`
+				return `今天已经测过人品啦，是 ${doc.rp}，再怎么测都不会变的了啦……`
 			},
 			subs: {
 				top: {
@@ -153,6 +154,15 @@ export default ({ command: { CmdError } }) => {
 				if (max <= 0) return new CmdError('掷骰范围必须是正数')
 				if (max >= 1e6) return new CmdError('掷骰范围太大')
 				return String((Math.random() * 1e6 | 0) % max + 1)
+			}
+		},
+
+		din: {
+			help: '从给定的选项中等概率随机抽取一个',
+			args: [ { ty: 'words', name: 'items' } ],
+			fn: (items) => {
+				if (! items.length) return '没有待抽取的选项'
+				return String(randomItem(items))
 			}
 		}
 	}
