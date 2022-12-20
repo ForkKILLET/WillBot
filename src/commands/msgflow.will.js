@@ -40,6 +40,8 @@ let onMessage
 
 export default (_, cfg) => {
 	if (! bot.oicq) return
+	if (! cfg) return
+
 	bot.oicq.on('message.group', onMessage = onMessageFactory(cfg))
 
 	// Todo: refactor

@@ -9,6 +9,7 @@
   "dependencies": {
     "@babel/core": "^7.17.10",
     "@babel/plugin-syntax-import-assertions": "^7.16.7",
+    "canvas": "^2.10.2",
     "chalk": "^5.0.1",
     "chalk-template": "^0.4.0",
     "cheerio": "^1.0.0-rc.12",
@@ -20,16 +21,12 @@
     "https-proxy-agent": "^5.0.1",
     "js-yaml": "^4.1.0",
     "minimist": "^1.2.6",
-    "mkfifo": "^2.1.0",
     "mongodb": "^4.9.0",
     "node-fetch": "^3.2.10",
     "oicq": "^2.3.1",
     "pretty-format": "^29.0.1",
-    "puppeteer": "^16.2.0",
+    "puppeteer": "^18.1.0",
     "schemastery": "^3.5.3"
-  },
-  "engines": {
-    "node": "16 | 17"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.17.0",
@@ -40,6 +37,5 @@
     "lint": "eslint --fix src/",
     "lint:nofix": "eslint src/",
     "start": "node ./src/index.js"
-  },
-  "packageManager": "yarn@3.2.1"
+  }
 }
