@@ -1,5 +1,4 @@
 import * as cheerio     from 'cheerio'
-import fetch            from 'node-fetch'
 import dedent           from 'dedent'
 import { segment }      from 'oicq'
 import Scm              from 'schemastery'
@@ -42,12 +41,12 @@ export default ({ command: { CmdError } }, cfg) => {
                 const param = { mode }
                 if (date) param.date = date
                 const rank = await (
-                    await fetch(`${pixiv}/ranking.php?` + new URLSearchParams(param), { agent })
+                    await fetch(`${pixiv}/ranking.php?` + new URLSearchParams(param))
                 ).text()
 
                 const $rank = cheerio.load(rank)
                 const artUrls = [ ... $rank('.ranking-items > section > div > a.work') ]
-                    .map(el => el.attribs.href)
+                    .map(el => el.attribs?.href)
 
                 let artUrl, artId
                 if (rk) {
@@ -106,7 +105,7 @@ export default ({ command: { CmdError } }, cfg) => {
             ],
             async fn (id) {
                 const artUrl = `${pixiv}/artworks/${id}`
-                const art = await (await fetch(artUrl, { agent })).text()
+                const art = await (await fetch(artUrl)).text()
 
                 bot.art = art
 
@@ -117,11 +116,10 @@ export default ({ command: { CmdError } }, cfg) => {
                 const imgData = data.illust[id]
 
                 const img = await fetch(imgData.urls.regular, {
-                    headers: { Referer: artUrl },
-                    agent
+                    headers: { Referer: artUrl }
                 })
 
-                return segment.image(await streamToBuffer(img.body))
+                return segment.image(Buffer.from(await img.arrayBuffer()))
             }
         }
     }
