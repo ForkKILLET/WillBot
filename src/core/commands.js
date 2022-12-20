@@ -343,7 +343,7 @@ export const runCmd = async (msg) => {
 		catch (err) {
 			if (err instanceof PermError) throw err
 			bot.logger.err(`Caught internal error in ${cookedCmdName}`)(err)
-			throw (err?.message ?? err) + ' (internal error)'
+			throw '(internal error) ' + (err?.message ?? err)
 		}
 	}
 	catch (err) {
