@@ -442,6 +442,10 @@ export default () => {
 
 				const block = game.board[row - 1][col - 1]
 
+				if (game.round === 2 && game.record[0].type === type && type === PieceTypes.square) {
+					return '先手玩家前两手不能都下【方】'
+				}
+
 				if (game.ltdPos) {
 					if (! game.ltdPos.length) {
 						if (block.some(x => typeof x === 'number'))
