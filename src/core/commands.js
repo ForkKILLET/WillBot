@@ -143,6 +143,8 @@ export const findCmdWith = async (cmdName, uid) => {
 }
 
 export class CmdError extends Error {
+	errorType = 'CmdError'
+
 	constructor(msg, doLog) {
 		super(msg)
 		if (doLog) bot.logger.err('Handled internal error')(msg)
@@ -150,6 +152,8 @@ export class CmdError extends Error {
 }
 
 export class PermError extends Error {
+	errorType = 'PermError'
+
 	constructor(level, why) {
 		super(`permission denied${ why ? ' for ' + why : '' } (Require ${level})`)
 	}
@@ -305,12 +309,12 @@ export const runCmd = async (msg) => {
 				const result = await bot.beforeReply?.({
 					group_id: msg.group_id,
 					sender: { user_id: 0 },
-					raw_message: reply instanceof CmdError ? reply.message : reply
+					raw_message: reply?.errorType === 'CmdError' ? reply.message : reply
 				})
 				if (result?.abort) return
 				if (result?.modify) return await handleReply(result.modify)
 
-				if (reply instanceof CmdError) msg.reply.err(reply.message)
+				if (reply?.errorType === 'CmdError') msg.reply.err(reply.message)
 				else if (reply) msg.reply(reply)
 			}
 			const ctor = Object.getPrototypeOf(cmd.fn).constructor
@@ -341,13 +345,13 @@ export const runCmd = async (msg) => {
 			}
 		}
 		catch (err) {
-			if (err instanceof PermError) throw err
+			if (err?.errorType === 'PermError') throw err
 			bot.logger.err(`Caught internal error in ${cookedCmdName}`)(err)
 			throw '(internal error) ' + (err?.message ?? err)
 		}
 	}
 	catch (err) {
-		if (err instanceof PermError) return msg.reply.err(err.message)
+		if (err?.errorType === 'PermError') return msg.reply.err(err.message)
 		msg.reply.err(`${cookedCmdName}: ${err}`)
 	}
 }
