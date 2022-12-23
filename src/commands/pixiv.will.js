@@ -3,9 +3,7 @@ import dedent           from 'dedent'
 import { segment }      from 'oicq'
 import Scm              from 'schemastery'
 import HttpsProxyAgent  from 'https-proxy-agent'
-import {
-    randomItem, streamToBuffer
-}                       from '../util/toolkit.js'
+import { randomItem }   from '../util/toolkit.js'
 
 const pixiv = 'https://www.pixiv.net'
 
@@ -59,7 +57,7 @@ export default ({ command: { CmdError } }, cfg) => {
                     const { history = {} } = await col.findOne({ _id }) ?? {}
                     while (true) {
                         if (! (artUrl = randomItem(artUrls))) {
-                            return 'Not found.'
+                            return 'No more artworks today :('
                         }
                         artId = artUrl.split('/').at(-1)
                         if (history[artId]) artUrls.splice(artUrls.indexOf(artUrl), 1)
@@ -112,6 +110,9 @@ export default ({ command: { CmdError } }, cfg) => {
                 const $art = cheerio.load(art)
 
                 const [ $data ] = $art('#meta-preload-data')
+
+				if (! $data) return `${id} not found.`
+
                 const data = JSON.parse($data.attribs.content.replace(/\r\n/g, ''))
                 const imgData = data.illust[id]
 
