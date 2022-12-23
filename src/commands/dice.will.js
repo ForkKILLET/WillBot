@@ -9,8 +9,7 @@ export default ({ command: { CmdError } }) => {
 		jrrp: {
 			help: '获取你的今日人品',
 			args: [ { ty: '$msg' } ],
-			fn: async (msg) => {
-				const uid = msg.sender.user_id
+			fn: async ({ sender: { user_id: uid, nickname } }) => {
 				const col = bot.mongo.db.collection('dice_rp')
 
 				const now = + dayjs(new Date).startOf('day')
@@ -19,7 +18,7 @@ export default ({ command: { CmdError } }) => {
 				if (! doc) {
 					const rp = (Math.random() * 1e6 | 0) % 101
 					await col.insertOne({ uid, day: now, rp })
-					return `你今天的人品是 ${rp}`
+					return `${nickname ? nickname + ' ' : '你'}今天的人品是 ${rp}`
 				}
 				return `今天已经测过人品啦，是 ${doc.rp}，再怎么测都不会变的了啦……`
 			},
@@ -30,7 +29,7 @@ export default ({ command: { CmdError } }) => {
 						{ ty: '$msg' },
 						{ ty: 'bool', name: 'chart', opt: true }
 					],
-					fn: async (msg, chart) => {
+					fn: async (msg, chart = true) => {
 						if (msg.message_type !== 'group') return '请在群内调用'
 						const members = await bot.oicq.getGroupMemberList(msg.group_id)
 
@@ -105,10 +104,10 @@ export default ({ command: { CmdError } }) => {
 				history: {
 					help: '获取您的历史人品',
 					args: [
-						{ ty: 'bool', name: 'chart', opt: true, perm: 1 },
-						{ ty: '$uid' }
+						{ ty: '$uid' },
+						{ ty: 'bool', name: 'chart', opt: true }
 					],
-					fn: async (useChart, uid) => {
+					fn: async (uid, useChart = true) => {
 						const docs = (await bot.mongo.db.collection('dice_rp')
 							.find({ uid })
 							.toArray())
