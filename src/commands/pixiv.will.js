@@ -116,6 +116,8 @@ export default ({ command: { CmdError } }, cfg) => {
                 const data = JSON.parse($data.attribs.content.replace(/\r\n/g, ''))
                 const imgData = data.illust[id]
 
+				if (! imgData.urls.regular) return `${id} not preloaded`
+
                 const img = await fetch(imgData.urls.regular, {
                     headers: { Referer: artUrl }
                 })

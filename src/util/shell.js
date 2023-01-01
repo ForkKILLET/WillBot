@@ -74,7 +74,7 @@ export default (ln, vars) => {
 			continue
 		}
 		else f.wh = false
-		if (ch === '\\') f.esc = true
+		if (ch === '\\' && ! f.sq) f.esc = true
 		else if (ch === '\'' && ! f.dq) f.sq = ! f.sq
 		else if (ch === '"' && ! f.sq) f.dq = ! f.dq
 		// Else if (! f.dq && ! f.sq && ch === '~') now += '/home'

@@ -258,7 +258,8 @@ export const runCmd = async (msg) => {
 			case 'words':
 				return miniArgs.splice(0)
 			case 'text':
-				return miniArgs.splice(0).join(' ')
+				miniArgs.splice(0)
+				return args.join(' ')
 			case 'str':
 			case 'bool':
 			case 'num': {

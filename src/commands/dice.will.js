@@ -14,15 +14,60 @@ export default ({ command: { CmdError } }) => {
 
 				const now = + dayjs(new Date).startOf('day')
 				const doc = await col.findOne({ uid, day: now })
+				const name = nickname ? nickname + ' ' : '你'
+
+				const CELEBRATE = false
+
+				if (CELEBRATE) {
+					await col.updateOne(
+						{ uid, day: now },
+						{ $set: { rp: 100 } },
+						{ upsert: true }
+					)
+					return `${name}，新年快乐！今天你的人品是 100！`
+				}
 
 				if (! doc) {
 					const rp = (Math.random() * 1e6 | 0) % 101
 					await col.insertOne({ uid, day: now, rp })
-					return `${nickname ? nickname + ' ' : '你'}今天的人品是 ${rp}`
+					return `${name}今天的人品是 ${rp}`
 				}
-				return `今天已经测过人品啦，是 ${doc.rp}，再怎么测都不会变的了啦……`
+				return `${name}今天已经测过人品啦，是 ${doc.rp}，再怎么测都不会变的了啦……`
 			},
 			subs: {
+				average: {
+					help: '获取今天群内的平均人品',
+					args: [
+						{ ty: '$msg' },
+						{ ty: 'bool', name: 'comp', opt: true }
+					],
+					fn: async (msg, comp) => {
+						if (msg.message_type !== 'group') return '请在群内调用'
+						const members = await bot.oicq.getGroupMemberList(msg.group_id)
+
+						const now = + dayjs(new Date).startOf('day')
+						const all = (await bot.mongo.db
+							.collection('dice_rp')
+							.find({ day: now })
+							.toArray())
+							.filter(({ uid }) => members.get(uid))
+
+						if (! all.length) return '今天群内还没有人测过人品'
+
+						const sum = all.reduce((a, { rp }) => a + rp, 0)
+						const average = sum / all.length
+
+						const me = all.find(({ uid }) => uid === msg.sender.user_id) 
+
+						return `今天群内的平均人品是 ${average.toFixed(2)}`
+							+ (comp
+								? me
+									? `，你的人品和平均的差值是 ${(me.rp - average).toFixed(2)}`
+									: '，但你今天还没有测人品哦'
+								: ''
+							)
+					}
+				},
 				top: {
 					help: '获取今天群内人品排行榜',
 					args: [
