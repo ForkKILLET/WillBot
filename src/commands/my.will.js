@@ -7,7 +7,7 @@ export default (() => ({
 			help: 'Add an <alias> for <command>.',
 			args: [
 				{ ty: 'str', name: 'alias' },
-				{ ty: 'text', name: 'command' },
+				{ ty: 'str', name: 'command' },
 				{ ty: '$uid' }
 			],
 			fn: async (alias, command, uid) => {
@@ -126,7 +126,7 @@ export default (() => ({
 			help: 'Add an <env> with a value of <val>.',
 			args: [
 				{ ty: 'str', name: 'env' },
-				{ ty: 'text', name: 'val' },
+				{ ty: 'str', name: 'val' },
 				{ ty: '$uid' }
 			],
 			fn: async (env, val, uid) => {
