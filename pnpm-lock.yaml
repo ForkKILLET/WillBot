@@ -9,7 +9,7 @@ specifiers:
   chalk: ^5.2.0
   chalk-template: ^0.4.0
   cheerio: ^1.0.0-rc.12
-  cuiping: ^1.8.2
+  cuiping: ^1.10.0
   dayjs: ^1.11.7
   dedent: ^0.7.0
   echarts: ^5.4.1
@@ -33,7 +33,7 @@ dependencies:
   chalk: 5.2.0
   chalk-template: 0.4.0
   cheerio: 1.0.0-rc.12
-  cuiping: 1.8.2
+  cuiping: 1.10.0
   dayjs: 1.11.7
   dedent: 0.7.0
   echarts: 5.4.1
@@ -1625,8 +1625,8 @@ packages:
     engines: {node: '>= 6'}
     dev: false
 
-  /cuiping/1.8.2:
-    resolution: {integrity: sha512-9P+DJ/+5IhI7mp/nK3LF50PeFWj9SIL3o0Bn0n/owS3lAxhX9mJ+KnHos7vt2fG3u7mOU2DHk/zpVsWNzmh9lQ==}
+  /cuiping/1.10.0:
+    resolution: {integrity: sha512-nLIm44cwWDCS0G+6AlIjFTmclYxAAliNyMbJYN7gqwfi0t6h1MgE5Uq6zHuqxnZeS+692Sft/Yp/ShZ3V/xyPA==}
     dependencies:
       chalk: 5.2.0
       entities: 4.4.0
