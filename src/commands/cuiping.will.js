@@ -1,4 +1,5 @@
 import { render }	from 'cuiping'
+import pack			from 'cuiping/package.json' assert { type: 'json' }
 import puppeteer	from 'puppeteer'
 import { segment }	from 'oicq'
 
@@ -37,5 +38,13 @@ export default () => ({
 			return segment.image(image)	
 		}
 		return 'Error: ' + error
+	},
+	subs: {
+		info: {
+			args: [],
+			fn() {
+				return 'v' + pack.version
+			}
+		}
 	}
 })
