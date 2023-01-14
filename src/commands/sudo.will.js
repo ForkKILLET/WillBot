@@ -3,7 +3,7 @@ export default (({ command: { runCmd, CmdError } }) => ({
 	perm: 3,
 	args: [
 		{ ty: 'num', name: 'uid' },
-		{ ty: 'text', name: 'command' },
+		{ ty: 'words', name: 'command' },
 		{ ty: '$checkPerm', user: true },
 		{ ty: '$msg' }
 	],
@@ -13,7 +13,7 @@ export default (({ command: { runCmd, CmdError } }) => ({
 		await cp.user(uid, 'lower permission than sudoee')
 
 		msg.sender.user_id = uid
-		msg.raw_message = cmd
+		msg.raw_message = cmd.join(' ')
 
 		await runCmd(msg)
 	}
