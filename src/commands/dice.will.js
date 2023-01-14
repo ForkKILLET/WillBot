@@ -84,11 +84,11 @@ export default ({ command: { CmdError } }) => {
 						const top = (await col.find({ day: now })
 							.toArray())
 							.map(({ uid, rp }) => ({
-								member: members.get(uid), rp
+								uid, member: members.get(uid), rp
 							}))
 							.filter(({ member }) => member)
 							.sort((doc1, doc2) => doc2.rp - doc1.rp)
-							.map(({ rp, member }) => ({ rp, name: member.card || member.nickname }))
+							.map(({ uid, rp, member }) => ({ uid, rp, name: member.card || member.nickname }))
 
 						if (msg.data_type === 'raw') return top
 
@@ -120,7 +120,11 @@ export default ({ command: { CmdError } }) => {
 								},
 								series: {
 									type: 'bar',
-									data: top.map(({ rp }) => rp),
+									data: top.map(({ uid, rp }) => {
+										const item = { value: rp }
+										if (uid === msg.sender.user_id) item.itemStyle = { color: 'orange' }
+										return item
+									}),
 									label: {
 										show: true
 									}
@@ -206,6 +210,7 @@ export default ({ command: { CmdError } }) => {
 			args: [ { ty: 'words', name: 'items' } ],
 			fn: (items) => {
 				if (! items.length) return '没有待抽取的选项'
+				if (items.length === 1) return 'WillBot 对确定的答案没有兴趣喵'
 				return String(randomItem(items))
 			}
 		}
